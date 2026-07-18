@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Logs / temp
+*.log
+npm-debug.log*
+
+# Raw photo archives — not needed to build or serve the site.
+# Working copies live in site-photos/; optimized versions in assets/img/.
+professional photos/
+gallery-images/
