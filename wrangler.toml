@@ -1,0 +1,19 @@
+# Cloudflare Workers — static asset deployment for Perk General Contracting.
+#
+# The site is plain HTML/CSS/JS with no build step, so this Worker has no
+# server code: Wrangler simply uploads and serves the files in this repo.
+# index.html lives in the project root, so the assets directory is ".".
+#
+# Connected to GitHub in the Cloudflare dashboard with:
+#   Build command:  (leave empty — no build step)
+#   Deploy command: npx wrangler deploy
+# Cloudflare then redeploys automatically whenever the GitHub repo updates.
+#
+# Files that are in the repo but NOT part of the public website (source photos,
+# build tooling, docs) are excluded from the upload via .assetsignore.
+
+name = "perk-general-contracting"
+compatibility_date = "2025-11-01"
+
+[assets]
+directory = "."

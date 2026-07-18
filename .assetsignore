@@ -1,0 +1,23 @@
+# Files that live in the repo but are NOT part of the public website.
+# Wrangler skips these when uploading static assets (gitignore-style patterns).
+# This keeps source photos, build tooling, and docs off the live site.
+
+# Photo source + build tooling (used only to regenerate the site's images)
+site-photos/
+assets/original/
+build_site.py
+rebuild.command
+
+# Docs / notes
+*.md
+SITE-INVENTORY.md
+UPDATING-PHOTOS.md
+
+# Stray source asset (not referenced by the site)
+PERK_FacebookCoverImage_851x3154.jpg
+
+# Repo / config plumbing
+.git
+.gitignore
+.assetsignore
+wrangler.toml
