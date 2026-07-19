@@ -25,3 +25,6 @@ npm-debug.log*
 # Working copies live in site-photos/; optimized versions in assets/img/.
 professional photos/
 gallery-images/
+
+# Logo source-transfer folder (copies live in assets/logo/)
+new logos/
