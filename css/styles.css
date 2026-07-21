@@ -441,7 +441,7 @@ body.pmodal-open { overflow: hidden; }
 .ba__tag--before { left: .7rem; } .ba__tag--after { right: .7rem; }
 
 /* lightbox */
-.lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(12,11,10,.94); display: none; align-items: center; justify-content: center; padding: clamp(1rem, 4vw, 3rem); opacity: 0; transition: opacity .3s; }
+.lightbox { position: fixed; inset: 0; z-index: 230; background: rgba(12,11,10,.94); display: none; align-items: center; justify-content: center; padding: clamp(1rem, 4vw, 3rem); opacity: 0; transition: opacity .3s; }
 .lightbox.is-open { display: flex; opacity: 1; }
 .lightbox img { max-width: 100%; max-height: 82vh; border-radius: 8px; box-shadow: var(--shadow-lg); }
 .lightbox__cap { position: absolute; bottom: 1.4rem; left: 0; right: 0; text-align: center; color: rgba(255,255,255,.85); font-size: .92rem; padding-inline: 1rem; }
