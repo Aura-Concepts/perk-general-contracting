@@ -6,10 +6,10 @@ You do NOT need to touch any code to manage photos. Edit the folders in
 `site-photos/` and run this script (or double-click `rebuild.command`).
 
   site-photos/
-    hero/        one image  -> the big homepage banner
-    featured/    up to 6     -> the "A look at our work" grid on the homepage
-    owner/       one image  -> the portrait on the About page
-    projects/    -> the Gallery, organised as PROJECTS:
+    hero/          one image -> the big homepage banner
+    owner/         one image -> the portrait on the About page
+    featured.txt   -> which PROJECTS show on the home "A look at our work" grid
+    projects/      -> the Gallery, organised as PROJECTS:
 
       projects/<Category>/<Sub-type>/<NN Project Name>/
           01 first photo.jpg          <- lowest number = the cover
@@ -195,32 +195,59 @@ f'''        <button class="proj-card" type="button" data-id="{pid}" data-cat="{f
           </span>
         </button>''')
 
-    return "\n".join(cards), json.dumps(data, separators=(',', ':')), len(data)
+    return "\n".join(cards), json.dumps(data, separators=(',', ':')), data
 
 # ---------------------------------------------------------------- featured (home)
-def build_featured():
-    outdir = os.path.join(IMG, "featured")
-    if os.path.isdir(outdir): shutil.rmtree(outdir)
-    srcs = list_images(os.path.join(SRC, "featured"))[:6]
+def build_featured(projects):
+    """Home 'A look at our work' tiles reference PROJECTS (so clicking a tile
+    opens that project on the gallery page). Which projects, in what order, and
+    the short caption come from site-photos/featured.txt:
+
+        Audi Dealership | Audi Showroom      <- Project name | optional caption
+        Modern Kitchen Remodel
+
+    Falls back to the first up-to-6 projects if the file is missing. The tile
+    reuses the project's already-rendered cover image."""
+    stale = os.path.join(IMG, "featured")           # old per-image folder, no longer used
+    if os.path.isdir(stale): shutil.rmtree(stale)
+
+    by_title = {}
+    for p in projects:
+        by_title[p["title"].lower()] = p
+
+    sel = []
+    ftxt = os.path.join(SRC, "featured.txt")
+    if os.path.exists(ftxt):
+        for line in open(ftxt):
+            line = line.strip()
+            if not line or line.startswith("#"): continue
+            parts = line.split("|")
+            key = re.sub(r'^\s*\d+[\s._\-)]+', '', parts[0].strip()).lower()
+            p = by_title.get(key)
+            if p: sel.append((p, parts[1].strip() if len(parts) > 1 else p["title"]))
+    else:
+        for p in projects[:6]: sel.append((p, p["title"]))
+    sel = sel[:6]
+
     layout = {0: "wide tall", 5: "wide"}
     html = []
-    for i, src in enumerate(srcs):
-        slug = slugify(caption_from(src)) + "-" + uid(src)
-        m = render(src, outdir, slug, FEATURED_WIDTHS)
-        ws = m["widths"]; ar = m["ar"]; cap = caption_from(src)
+    for i, (p, cap) in enumerate(sel):
+        cov = p["photos"][0] if p["photos"] else None
+        if not cov: continue
+        d = p["dir"]; ws = cov["w"]; ar = cov["ar"]
         thumb = pick(ws, 640); small = pick(ws, 400)
         wset = [small] + ([thumb] if thumb != small else [])
         cls = layout.get(i, ""); class_attr = f' class="{cls}"' if cls else ""
         sizes = "(max-width:900px) 100vw, 50vw" if cls else "(max-width:900px) 50vw, 25vw"
         html.append(
-f'''          <a href="gallery.html"{class_attr}>
+f'''          <a href="gallery.html?project={p['id']}"{class_attr}>
             <picture>
-              <source type="image/webp" sizes="{sizes}" srcset="{srcset('assets/img/featured', slug, wset, 'webp')}">
-              <img src="assets/img/featured/{slug}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset('assets/img/featured', slug, wset, 'jpg')}" alt="{esc(cap)}" width="{thumb}" height="{round(thumb*ar)}" loading="lazy" decoding="async">
+              <source type="image/webp" sizes="{sizes}" srcset="{srcset(d, cov['s'], wset, 'webp')}">
+              <img src="{d}/{cov['s']}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset(d, cov['s'], wset, 'jpg')}" alt="{esc(cov['alt'])}" width="{thumb}" height="{round(thumb*ar)}" loading="lazy" decoding="async">
             </picture>
             <span class="cap">{esc(cap)}</span>
           </a>''')
-    return "\n".join(html), len(srcs)
+    return "\n".join(html), len(sel)
 
 # ---------------------------------------------------------------- hero
 def build_hero():
@@ -266,8 +293,8 @@ def inject(page, blocks):
 
 def main():
     print("Building photos from site-photos/ …")
-    cards, projects_json, n = build_projects(); print(f"  gallery:  {n} projects")
-    feat_html, feat_n = build_featured();       print(f"  featured: {feat_n} photos")
+    cards, projects_json, projects_data = build_projects(); print(f"  gallery:  {len(projects_data)} projects")
+    feat_html, feat_n = build_featured(projects_data);      print(f"  featured: {feat_n} projects")
     hero_html = build_hero();                   print(f"  hero:     {'set' if hero_html else 'unchanged (no image)'}")
     owner_html = build_owner();                 print(f"  owner:    {'set' if owner_html else 'unchanged (no image)'}")
 

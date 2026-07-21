@@ -394,6 +394,9 @@ p { text-wrap: pretty; }
 .proj-card__view span { color: var(--accent); }
 .proj-card:hover .proj-card__view, .proj-card:focus-visible .proj-card__view { opacity: 1; transform: none; }
 .proj-card.is-hidden { display: none; }
+/* brief highlight when arriving from a home-page featured tile */
+@keyframes cardflash { 0%, 100% { box-shadow: var(--shadow-sm); } 25%, 65% { box-shadow: 0 0 0 3px var(--accent), var(--shadow-lg); } }
+.proj-card.is-flash { animation: cardflash 2s var(--ease); }
 
 /* --------------------------------------------------------- project modal */
 body.pmodal-open { overflow: hidden; }

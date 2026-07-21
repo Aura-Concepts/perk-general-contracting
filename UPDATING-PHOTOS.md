@@ -1,63 +1,129 @@
 # How to update the website photos
 
-You never need to touch any code. Everything is controlled by the folders inside
-**`site-photos/`**. Add, remove, or rename image files there, then rebuild.
-
-## The folders
+You never touch any code. Everything is controlled by the folders inside
+**`site-photos/`**. Change the files, then **double-click `rebuild.command`**
+(first time: right-click → Open to get past the macOS prompt) and refresh.
 
 ```
 site-photos/
-├── hero/        → the big banner photo at the top of the home page (1 photo)
-├── featured/    → the "A look at our work" grid on the home page (up to 6 photos)
-├── owner/       → the portrait on the About page (1 photo)
-└── gallery/     → the Gallery page, split into categories:
-    ├── dealerships/   (shows the "Dealership" tag)
-    ├── commercial/    (shows the "Commercial" tag)
-    ├── kitchens/      (shows the "Kitchen" tag)
-    ├── interiors/     (shows the "Interior" tag)
-    └── exteriors/     (shows the "Exterior" tag)
+├── hero/          → the big banner photo at the top of the home page (1 photo)
+├── owner/         → the portrait on the About page (1 photo)
+├── featured.txt   → which PROJECTS show on the home "A look at our work" grid
+└── projects/      → the Gallery
 ```
 
-## The 3 rules
+---
 
-1. **The file name becomes the caption.**
-   `Modern kitchen remodel.jpg` shows the caption *"Modern kitchen remodel."*
-   This is also the image's alt text (good for Google + screen readers), so name
-   it descriptively.
+## Projects (the Gallery)
 
-2. **A number at the front sets the order** (and is removed from the caption).
-   `01 Modern kitchen.jpg`, `02 Stone fireplace.jpg` … Lower numbers show first.
-   The gallery is ordered by these numbers across every category.
+The gallery is organized into **projects**. Each project is a folder that holds
+its own photos. A project folder lives inside a **category** and a **sub-type**:
 
-3. **The folder sets the category.** Move a photo between category folders to
-   recategorize it. Drop a new photo into `kitchens/` and it becomes a kitchen.
+```
+projects/<Category>/<Sub-type>/<NN Project Name>/
+```
 
-Big photos are fine (phone photos, DSLR, etc.) — they're automatically resized and
-compressed into fast web versions. Accepts **.jpg .jpeg .png .webp**.
+Example:
 
-## To make changes
+```
+projects/
+  Commercial/
+    Dealership/
+      01 Audi Dealership/
+          01 Showroom with vehicles.jpg     ← lowest number = the cover photo
+          02 Customer lounge.jpg
+          03 Service center.jpg
+          before - service bay.jpg          ┐  these two make a
+          after - service bay.jpg           ┘  before/after slider
+          about.txt                         ← one-line description (optional)
+  Residential/
+    Kitchen/
+      Smith Kitchen Remodel/
+          01 Finished kitchen.jpg
+  Agricultural/
+    Pole Barn/
+      Miller Barn/
+          01 Red barn.jpg
+```
 
-1. Open the `site-photos` folder in Finder.
-2. Add / delete / rename photos in the right folders.
-3. **Double-click `rebuild.command`** in the main project folder.
-   (First time only: right-click it → Open, to get past macOS's security prompt.)
-4. Refresh the website. Done.
+### The rules
 
-### Examples
+1. **Category** = the top folder. It's the badge on the card and the filter
+   button. Use **Commercial**, **Residential**, or **Agricultural**.
+   *(To add or rename a category, edit `CATEGORIES` at the top of
+   `build_site.py`.)*
+2. **Sub-type** = the next folder (Dealership, Kitchen, Basement, Pole Barn …).
+   It shows inside the project when someone opens it. Make up whatever fits.
+3. **Project folder** = one job. A number at the front (`01 `, `02 `) sets the
+   order it appears in the gallery; the number is dropped from the name shown.
+4. **Photo file name = caption/alt text.** Name it what you want shown. A leading
+   number sets the order the photos appear inside the project.
+5. **The cover** (shown on the gallery card) is the lowest-numbered photo. To
+   change a project's cover, just renumber the photo you want as `01`.
 
-- **Swap a gallery photo:** delete the old file, drop the new one in the same
-  category folder, name it what you want shown, rebuild.
-- **Change what's on the home page grid:** put the 6 photos you want in
-  `featured/`, numbered `1`–`6` for order, rebuild.
-- **Change the top banner:** replace the single photo in `hero/`, rebuild.
-- **Reorder the gallery:** change the number at the front of the file names,
-  rebuild.
+### Before / after sliders
 
-## Notes
+Put two photos of the same spot in a project folder named with **`before -`**
+and **`after -`** and the *same* text after the dash:
 
-- `featured/` looks best with exactly **6** photos (the first one becomes the
-  large tile).
-- If you're comfortable in Terminal, you can rebuild with:
-  `python3 build_site.py`
-- The category tags/filters themselves (Dealerships, Kitchens, etc.) live at the
-  top of `build_site.py` if you ever want to rename or add one.
+```
+before - kitchen.jpg
+after - kitchen.jpg
+```
+
+They become a drag-to-compare slider inside the project. You can have several
+pairs in one project (`before - kitchen`, `after - kitchen`, `before - bath`,
+`after - bath`, …).
+
+### Descriptions
+
+Add a file named **`about.txt`** to a project folder with one sentence about the
+job. It shows under the title when the project is opened. Optional.
+
+---
+
+## Home page "A look at our work"
+
+These tiles now point at **specific projects** — clicking one opens that project
+on the gallery page. Choose which projects appear (and their order) by editing
+**`site-photos/featured.txt`**:
+
+```
+# One project per line, in order. Max 6. The first line is the big tile.
+# Format:   Project name | Optional short caption
+Audi Dealership | Audi Showroom
+Modern Kitchen Remodel | Modern Kitchen
+Stone Fireplace Living Room | Stone Fireplace
+Commercial Outbuilding | Before & After
+Custom Deck
+Volkswagen Dealership | VW Dealership
+```
+
+- Use the **project's name** (the folder name, minus any leading number).
+- Add `| Short caption` to control the label on the tile; otherwise the project
+  title is used. Keep captions short — they read best as 1–3 words.
+- The tile image is that project's **cover** photo.
+
+---
+
+## Hero & About photo
+
+- **`hero/`** — drop in one image for the big home-page banner. Name it
+  descriptively (that becomes its alt text).
+- **`owner/`** — one portrait for the About page.
+
+---
+
+## To publish changes
+
+1. Edit the folders/files in `site-photos/`.
+2. **Double-click `rebuild.command`** (or run `python3 build_site.py`).
+3. Refresh the site. To put it live, commit & push:
+   ```
+   git add -A
+   git commit -m "Update project photos"
+   git push
+   ```
+
+Accepts **.jpg .jpeg .png .webp**. Big photos are fine — they're automatically
+resized and compressed into fast web versions.

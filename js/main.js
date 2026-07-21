@@ -189,6 +189,18 @@
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && pmodal.classList.contains("is-open") && !lb.classList.contains("is-open")) closeProject();
     });
+
+    /* deep link: gallery.html?project=<id> opens that project (from home tiles) */
+    var wantProject = new URLSearchParams(window.location.search).get("project");
+    if (wantProject && projects[wantProject]) {
+      var pcard = pgrid.querySelector('.proj-card[data-id="' + wantProject.replace(/[^a-z0-9\-]/gi, "") + '"]');
+      if (pcard) {
+        pcard.scrollIntoView({ block: "center" });
+        pcard.classList.add("is-flash");
+        setTimeout(function () { pcard.classList.remove("is-flash"); }, 2200);
+      }
+      openProject(wantProject);
+    }
   }
 
   /* --------------------------------------------------- contact form UX */
