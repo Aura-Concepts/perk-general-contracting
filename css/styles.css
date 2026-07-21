@@ -77,6 +77,9 @@ h1 { font-size: clamp(2.25rem, 5.6vw, 4rem); font-weight: 800; }
 h2 { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; }
 h3 { font-size: clamp(1.3rem, 2.4vw, 1.7rem); }
 p { text-wrap: pretty; }
+/* Archivo's ampersand reads like an "e"; render & in headings with Inter's
+   traditional looped form instead. The .amp spans are added by js/main.js. */
+.amp { font-family: var(--font-body); font-weight: 800; font-style: normal; }
 
 .eyebrow {
   font-family: var(--font-body);

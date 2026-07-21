@@ -152,4 +152,32 @@
          by setting the form action + method. This is a front-end demo submit. */
     });
   }
+
+  /* --------------------------------------------- traditional ampersand
+     Archivo's "&" reads like an "e". Wrap ampersands in headings in a
+     .amp span so they render in Inter's traditional looped form. */
+  (function () {
+    var wrap = function (el) {
+      Array.prototype.slice.call(el.childNodes).forEach(function (node) {
+        if (node.nodeType === 3) {
+          if (node.nodeValue.indexOf("&") === -1) return;
+          var parts = node.nodeValue.split("&");
+          var frag = document.createDocumentFragment();
+          parts.forEach(function (part, i) {
+            if (i > 0) {
+              var s = document.createElement("span");
+              s.className = "amp";
+              s.textContent = "&";
+              frag.appendChild(s);
+            }
+            frag.appendChild(document.createTextNode(part));
+          });
+          node.parentNode.replaceChild(frag, node);
+        } else if (node.nodeType === 1 && !node.classList.contains("amp")) {
+          wrap(node);
+        }
+      });
+    };
+    document.querySelectorAll("h1, h2, h3, h4").forEach(wrap);
+  })();
 })();
