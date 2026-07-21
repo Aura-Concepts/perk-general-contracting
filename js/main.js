@@ -104,8 +104,14 @@
     var lbShow = function (i) {
       if (!lbList.length) return;
       lbIndex = (i + lbList.length) % lbList.length;
-      lbImg.src = lbList[lbIndex].full; lbImg.alt = lbList[lbIndex].alt || "";
-      if (lbCap) lbCap.textContent = lbList[lbIndex].alt || "";
+      var it = lbList[lbIndex];
+      lbImg.style.opacity = "0";          // hide until the new image can paint
+      lbImg.alt = it.alt || "";
+      if (lbCap) lbCap.textContent = it.alt || "";
+      lbImg.src = it.full;
+      var reveal = function () { lbImg.style.opacity = "1"; };
+      if (lbImg.decode) { lbImg.decode().then(reveal).catch(reveal); }
+      else { lbImg.onload = reveal; }
     };
     var openLightbox = function (list, i) {
       lbList = list; lbFocus = document.activeElement; lbShow(i);
