@@ -114,6 +114,31 @@ Volkswagen Dealership | VW Dealership
 
 ---
 
+## Reviews
+
+Reviews live in **`content/reviews.txt`** (not in `site-photos/`). Each review
+is a block:
+
+```
+Name | Role or town | Stars (1-5) | Source (optional)
+The review text goes here.
+```
+
+- Put **`Google`** as the source to show a small "via Google" badge.
+- Reviews show newest-at-top in the order listed, so add new ones at the top.
+- The homepage shows the first 5; the Reviews page shows them all.
+
+**How new reviews come in:** the "Leave a Review" form on `reviews.html`
+emails each submission to you (via Formspree). When you get a good one, paste it
+into `content/reviews.txt` and rebuild — nothing is posted automatically.
+
+**Google review button:** on `reviews.html` there's a "Review us on Google"
+button. Replace its link with your direct Google review link (from your Google
+Business Profile → "Ask for reviews", it looks like `g.page/r/…`). It's marked
+with a comment in the file.
+
+---
+
 ## To publish changes
 
 1. Edit the folders/files in `site-photos/`.

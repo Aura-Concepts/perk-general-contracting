@@ -1,0 +1,26 @@
+# Perk General Contracting — customer reviews.
+#
+# One review per block. Separate blocks with a blank line.
+# First line of a block:   Name | Role or town | Stars (1-5) | Source (optional)
+# The lines after it are the review text.
+#
+# "Source" is optional. Put "Google" to show a small "via Google" badge.
+# Reviews show newest-at-top in the order listed here, so add new ones up top.
+#
+# HOW NEW REVIEWS ARRIVE: the "Leave a Review" form on reviews.html emails the
+# submission to you. If it's a good one, paste it here and run rebuild.command.
+
+Alesha Burgraff | Homeowner | 5 | Google
+We had the unusual project of adding a laundry chute to our turn-of-the-century home. They brought ideas on how to do it and made the chute door look like it had always been part of the house.
+
+Deanne Bottenfield | Homeowner | 5 | Google
+If you are looking for someone to work on your home like they were working on their own home, then this is the company for you.
+
+Logan Patrick | Homeowner | 5 | Google
+Had them rewire and move multiple outlets and switches. Did a great job. Looking forward to seeing what I can have them do next!
+
+Sam Yoder | Homeowner | 5 | Google
+They do great work! Nikolaus is honest and thorough. I highly recommend him for your next home project.
+
+Joe Knapp | Homeowner | 5 | Google
+Remodeled my home and it came out great. They treat the home like they would be fixing it for themselves to live in. Very trustworthy and honest people.
