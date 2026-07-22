@@ -2,70 +2,66 @@
 """
 Perk General Contracting — photo build.
 
-You do NOT need to touch any code to swap photos. Just manage the folders in
+You do NOT need to touch any code to manage photos. Edit the folders in
 `site-photos/` and run this script (or double-click `rebuild.command`).
 
   site-photos/
-    hero/         one image -> the big homepage banner
-    featured/     up to 6 images -> the "A look at our work" grid on the homepage
-    owner/        one image -> the portrait on the About page
-    gallery/
-      dealerships/   \
-      commercial/     |
-      kitchens/       |-> each folder is a gallery category (a filter button)
-      interiors/      |
-      exteriors/     /
+    hero/          one image -> the big homepage banner
+    owner/         one image -> the portrait on the About page
+    featured.txt   -> which PROJECTS show on the home "A look at our work" grid
+    projects/      -> the Gallery, organised as PROJECTS:
 
-Rules of thumb:
-  * The FILE NAME becomes the caption. Name it what you want shown, e.g.
-    "Modern kitchen remodel.jpg" -> caption "Modern kitchen remodel".
-  * To control ORDER, start the file name with a number: "01 ...", "02 ...".
-    The number is only for sorting and is removed from the caption.
-  * The FOLDER a photo sits in decides its category (and filter button).
-  * Accepts .jpg .jpeg .png .webp. Big photos are fine — they get resized.
+      projects/<Category>/<Sub-type>/<NN Project Name>/
+          01 first photo.jpg          <- lowest number = the cover
+          02 another photo.jpg
+          before - kitchen.jpg        <- "before -" / "after -" make a
+          after - kitchen.jpg            before/after slider (paired by the
+          about.txt                      text after the prefix)
+                                      <- about.txt = one-line description (optional)
+
+  * Category (Commercial / Residential / Agricultural) is the badge + filter.
+  * Sub-type (Dealership / Kitchen / Pole Barn …) shows inside the project.
+  * FILE NAME = caption/alt. A leading number sets order and is dropped.
 
 Then run:  python3 build_site.py
 """
-import os, re, glob, json, shutil, hashlib
+import os, re, json, shutil, hashlib
 from PIL import Image, ImageOps
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC  = os.path.join(ROOT, "site-photos")
 IMG  = os.path.join(ROOT, "assets", "img")
 
-# folder name -> (filter key used by the gallery buttons, badge label on the tile)
+# Category folder -> (filter key, badge label). Order here = order on the page.
 CATEGORIES = {
-    "dealerships": ("commercial", "Dealership"),
-    "commercial":  ("commercial", "Commercial"),
-    "kitchens":    ("kitchen",    "Kitchen"),
-    "interiors":   ("interior",   "Interior"),
-    "exteriors":   ("exterior",   "Exterior"),
+    "Commercial":   ("commercial",   "Commercial"),
+    "Residential":  ("residential",  "Residential"),
+    "Agricultural": ("agricultural", "Agricultural"),
 }
 
 EXTS = (".jpg", ".jpeg", ".png", ".webp")
-GALLERY_WIDTHS  = [400, 640, 800, 1200, 1600]
+PHOTO_WIDTHS    = [400, 640, 900, 1400]
 FEATURED_WIDTHS = [400, 640, 960, 1280]
 HERO_WIDTHS     = [960, 1280, 1600, 1920, 2400]
 OWNER_WIDTHS    = [400, 600, 800, 1000]
 
 # ---------------------------------------------------------------- helpers
-def caption_from(filename):
-    name = os.path.splitext(os.path.basename(filename))[0]
+def caption_from(name):
+    name = os.path.splitext(os.path.basename(name))[0]
     name = re.sub(r'^\s*\d+[\s._\-)]+', '', name)   # strip leading order token
     name = name.replace('_', ' ').strip()
-    name = re.sub(r'\s+', ' ', name)
-    return name or "Project photo"
+    return re.sub(r'\s+', ' ', name) or "Project photo"
 
 def natural_key(path):
     base = os.path.basename(path)
     m = re.match(r'\s*(\d+)', base)
     return (int(m.group(1)) if m else 10**9, base.lower())
 
-def slug_for(path):
-    cap = caption_from(path)
-    s = re.sub(r'[^a-z0-9]+', '-', cap.lower()).strip('-')[:48] or "photo"
-    h = hashlib.md5(path.encode()).hexdigest()[:6]
-    return f"{s}-{h}"
+def slugify(text):
+    return re.sub(r'[^a-z0-9]+', '-', text.lower()).strip('-')[:52] or "item"
+
+def uid(text):
+    return hashlib.md5(text.encode()).hexdigest()[:6]
 
 def list_images(folder):
     out = []
@@ -73,6 +69,11 @@ def list_images(folder):
         for f in os.listdir(folder):
             if f.lower().endswith(EXTS) and not f.startswith('.'):
                 out.append(os.path.join(folder, f))
+    return sorted(out, key=natural_key)
+
+def list_dirs(folder):
+    out = [os.path.join(folder, d) for d in os.listdir(folder)
+           if os.path.isdir(os.path.join(folder, d)) and not d.startswith('.')]
     return sorted(out, key=natural_key)
 
 def render(src, outdir, slug, ladder, q_webp=80, q_jpg=82):
@@ -86,8 +87,7 @@ def render(src, outdir, slug, ladder, q_webp=80, q_jpg=82):
         widths.append(native)
     widths = sorted(set(widths))
     for w in widths:
-        h = round(w * ar)
-        rim = im.resize((w, h), Image.LANCZOS)
+        rim = im.resize((w, round(w * ar)), Image.LANCZOS)
         rim.save(os.path.join(outdir, f"{slug}-{w}.webp"), "WEBP", quality=q_webp, method=6)
         rim.save(os.path.join(outdir, f"{slug}-{w}.jpg"),  "JPEG", quality=q_jpg, optimize=True, progressive=True)
     return {"widths": widths, "ar": round(ar, 4), "w": sw, "h": sh}
@@ -104,110 +104,185 @@ def srcset(rel, slug, widths, ext):
 
 def replace_between(html, start, end, new):
     pat = re.compile(re.escape(start) + r".*?" + re.escape(end), re.S)
-    return pat.sub(start + "\n" + new + "\n" + end, html, count=1)
+    # function replacement so backslashes in `new` (e.g. \u in JSON) aren't
+    # treated as regex escapes
+    return pat.sub(lambda m: start + "\n" + new + "\n" + end, html, count=1)
 
-# ---------------------------------------------------------------- build gallery
-def build_gallery():
-    outdir = os.path.join(IMG, "gallery")
-    if os.path.isdir(outdir): shutil.rmtree(outdir)
-    items = []
-    for folder, (filt, badge) in CATEGORIES.items():
-        for src in list_images(os.path.join(SRC, "gallery", folder)):
-            items.append((src, filt, badge))
-    items.sort(key=lambda t: natural_key(t[0]))     # global order via number prefix
+# ------------------------------------------------------------- projects (gallery)
+def is_before(p): return bool(re.match(r'^\s*(\d+[\s._\-)]+)?before\b', os.path.basename(p), re.I))
+def is_after(p):  return bool(re.match(r'^\s*(\d+[\s._\-)]+)?after\b',  os.path.basename(p), re.I))
+def ba_key(p):
+    n = os.path.splitext(os.path.basename(p))[0].lower()
+    n = re.sub(r'^\s*\d+[\s._\-)]+', '', n)
+    n = re.sub(r'^(before|after)\b[\s\-_]*', '', n).strip()
+    return n
 
-    html = []
-    for src, filt, badge in items:
-        slug = slug_for(src)
-        meta = render(src, outdir, slug, GALLERY_WIDTHS)
-        ws = meta["widths"]; ar = meta["ar"]
-        cap = caption_from(src)
-        thumb = pick(ws, 640); small = pick(ws, 400); full = ws[-1]
-        wset = [small] + ([thumb] if thumb != small else [])
-        sizes = "(max-width:560px) 100vw, (max-width:900px) 50vw, 33vw"
-        html.append(
-f'''        <a class="g-item" data-cat="{filt}" href="assets/img/gallery/{slug}-{full}.jpg" data-full="assets/img/gallery/{slug}-{full}.jpg" data-alt="{esc(cap)}">
-          <span class="g-badge">{esc(badge)}</span>
-          <picture>
-            <source type="image/webp" sizes="{sizes}" srcset="{srcset('assets/img/gallery', slug, wset, 'webp')}">
-            <img src="assets/img/gallery/{slug}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset('assets/img/gallery', slug, wset, 'jpg')}" alt="{esc(cap)}" width="{thumb}" height="{round(thumb*ar)}" loading="lazy" decoding="async">
-          </picture>
-          <span class="g-cap">{esc(cap)}</span>
-        </a>''')
-    return "\n".join(html), len(items)
+def build_projects():
+    outbase = os.path.join(IMG, "projects")
+    if os.path.isdir(outbase): shutil.rmtree(outbase)
+    root = os.path.join(SRC, "projects")
+    cards, data = [], []
+    if not os.path.isdir(root):
+        return "", "[]", 0
 
-# ---------------------------------------------------------------- build featured (home mosaic)
-def build_featured():
-    outdir = os.path.join(IMG, "featured")
-    if os.path.isdir(outdir): shutil.rmtree(outdir)
-    srcs = list_images(os.path.join(SRC, "featured"))[:6]
-    # layout classes recreate the designed mosaic when there are 6 tiles
+    for cat in CATEGORIES:                       # defined order
+        catdir = os.path.join(root, cat)
+        if not os.path.isdir(catdir): continue
+        filt, label = CATEGORIES[cat]
+        for subdir in list_dirs(catdir):         # sub-types
+            subtype = os.path.basename(subdir)
+            for projdir in list_dirs(subdir):    # projects
+                title = caption_from(os.path.basename(projdir))
+                pid = slugify(f"{cat}-{subtype}-{title}") + "-" + uid(projdir)
+                rel = f"assets/img/projects/{pid}"
+                absd = os.path.join(outbase, pid)
+
+                imgs = list_images(projdir)
+                photos = [i for i in imgs if not is_before(i) and not is_after(i)]
+                befores = [i for i in imgs if is_before(i)]
+                afters  = [i for i in imgs if is_after(i)]
+
+                about = os.path.join(projdir, "about.txt")
+                desc = open(about).read().strip() if os.path.exists(about) else ""
+
+                def add(src):
+                    s = slugify(caption_from(src)) + "-" + uid(src)
+                    m = render(src, absd, s, PHOTO_WIDTHS)
+                    return {"s": s, "w": m["widths"], "ar": m["ar"], "alt": caption_from(src)}
+
+                photo_data = [add(p) for p in photos]
+
+                # before/after pairs
+                ba = []
+                akeys = {ba_key(a): a for a in afters}
+                for b in befores:
+                    a = akeys.get(ba_key(b))
+                    if not a: continue
+                    bd = add(b); bd["alt"] = f"Before — {title}"
+                    ad = add(a); ad["alt"] = f"After — {title}"
+                    ba.append({"before": bd, "after": ad})
+
+                cover = photo_data[0] if photo_data else (
+                    add(afters[0]) if afters else (add(befores[0]) if befores else None))
+                if not cover:
+                    continue
+
+                data.append({"id": pid, "title": title, "cat": filt, "catLabel": label,
+                             "subtype": subtype, "desc": desc, "dir": rel,
+                             "photos": photo_data, "ba": ba})
+
+                # ---- card (cover rendered server-side) ----
+                cw = cover["w"]; car = cover["ar"]
+                thumb = pick(cw, 640); small = pick(cw, 400)
+                wset = [small] + ([thumb] if thumb != small else [])
+                sizes = "(max-width:560px) 100vw, (max-width:900px) 50vw, 380px"
+                ba_tag = '<span class="proj-card__flag">Before &amp; After</span>' if ba else ''
+                sub = subtype + (f' · {len(photo_data)} photos' if len(photo_data) > 1 else '')
+                cards.append(
+f'''        <button class="proj-card" type="button" data-id="{pid}" data-cat="{filt}" aria-label="View project: {esc(title)}">
+          <span class="proj-card__media">
+            <picture>
+              <source type="image/webp" sizes="{sizes}" srcset="{srcset(rel, cover['s'], wset, 'webp')}">
+              <img src="{rel}/{cover['s']}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset(rel, cover['s'], wset, 'jpg')}" alt="{esc(title)}" width="{thumb}" height="{round(thumb*car)}" loading="lazy" decoding="async">
+            </picture>
+          </span>
+          <span class="proj-card__badge">{esc(label)}</span>
+          {ba_tag}
+          <span class="proj-card__body">
+            <span class="proj-card__title">{esc(title)}</span>
+            <span class="proj-card__sub">{esc(sub)}</span>
+            <span class="proj-card__view">View project <span aria-hidden="true">&rarr;</span></span>
+          </span>
+        </button>''')
+
+    return "\n".join(cards), json.dumps(data, separators=(',', ':')), data
+
+# ---------------------------------------------------------------- featured (home)
+def build_featured(projects):
+    """Home 'A look at our work' tiles reference PROJECTS (so clicking a tile
+    opens that project on the gallery page). Which projects, in what order, and
+    the short caption come from site-photos/featured.txt:
+
+        Audi Dealership | Audi Showroom      <- Project name | optional caption
+        Modern Kitchen Remodel
+
+    Falls back to the first up-to-6 projects if the file is missing. The tile
+    reuses the project's already-rendered cover image."""
+    stale = os.path.join(IMG, "featured")           # old per-image folder, no longer used
+    if os.path.isdir(stale): shutil.rmtree(stale)
+
+    by_title = {}
+    for p in projects:
+        by_title[p["title"].lower()] = p
+
+    sel = []
+    ftxt = os.path.join(SRC, "featured.txt")
+    if os.path.exists(ftxt):
+        for line in open(ftxt):
+            line = line.strip()
+            if not line or line.startswith("#"): continue
+            parts = line.split("|")
+            key = re.sub(r'^\s*\d+[\s._\-)]+', '', parts[0].strip()).lower()
+            p = by_title.get(key)
+            if p: sel.append((p, parts[1].strip() if len(parts) > 1 else p["title"]))
+    else:
+        for p in projects[:6]: sel.append((p, p["title"]))
+    sel = sel[:6]
+
     layout = {0: "wide tall", 5: "wide"}
     html = []
-    for i, src in enumerate(srcs):
-        slug = slug_for(src)
-        meta = render(src, outdir, slug, FEATURED_WIDTHS)
-        ws = meta["widths"]; ar = meta["ar"]
-        cap = caption_from(src)
+    for i, (p, cap) in enumerate(sel):
+        cov = p["photos"][0] if p["photos"] else None
+        if not cov: continue
+        d = p["dir"]; ws = cov["w"]; ar = cov["ar"]
         thumb = pick(ws, 640); small = pick(ws, 400)
         wset = [small] + ([thumb] if thumb != small else [])
-        cls = layout.get(i, "")
-        class_attr = f' class="{cls}"' if cls else ""
+        cls = layout.get(i, ""); class_attr = f' class="{cls}"' if cls else ""
         sizes = "(max-width:900px) 100vw, 50vw" if cls else "(max-width:900px) 50vw, 25vw"
         html.append(
-f'''          <a href="gallery.html"{class_attr}>
+f'''          <a href="gallery.html?project={p['id']}"{class_attr}>
             <picture>
-              <source type="image/webp" sizes="{sizes}" srcset="{srcset('assets/img/featured', slug, wset, 'webp')}">
-              <img src="assets/img/featured/{slug}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset('assets/img/featured', slug, wset, 'jpg')}" alt="{esc(cap)}" width="{thumb}" height="{round(thumb*ar)}" loading="lazy" decoding="async">
+              <source type="image/webp" sizes="{sizes}" srcset="{srcset(d, cov['s'], wset, 'webp')}">
+              <img src="{d}/{cov['s']}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset(d, cov['s'], wset, 'jpg')}" alt="{esc(cov['alt'])}" width="{thumb}" height="{round(thumb*ar)}" loading="lazy" decoding="async">
             </picture>
             <span class="cap">{esc(cap)}</span>
           </a>''')
-    return "\n".join(html), len(srcs)
+    return "\n".join(html), len(sel)
 
-# ---------------------------------------------------------------- build hero
+# ---------------------------------------------------------------- hero
 def build_hero():
-    outdir = os.path.join(IMG, "hero")
     srcs = list_images(os.path.join(SRC, "hero"))
-    if not srcs:
-        return None
+    if not srcs: return None
+    outdir = os.path.join(IMG, "hero")
     if os.path.isdir(outdir): shutil.rmtree(outdir)
-    src = srcs[0]
-    slug = slug_for(src)
-    meta = render(src, outdir, slug, HERO_WIDTHS)
-    ws = meta["widths"]; cap = caption_from(src)
+    src = srcs[0]; slug = slugify(caption_from(src)) + "-" + uid(src)
+    m = render(src, outdir, slug, HERO_WIDTHS); ws = m["widths"]; cap = caption_from(src)
     base = pick(ws, 1600)
-    # refresh the social-share image from the hero
     og = ImageOps.fit(ImageOps.exif_transpose(Image.open(src)).convert("RGB"), (1200, 630), Image.LANCZOS)
     og.save(os.path.join(IMG, "og-cover.jpg"), "JPEG", quality=84, optimize=True)
-    html = (
+    return (
 f'''        <picture>
           <source type="image/webp" sizes="100vw" srcset="{srcset('assets/img/hero', slug, ws, 'webp')}">
-          <img src="assets/img/hero/{slug}-{base}.jpg" sizes="100vw" srcset="{srcset('assets/img/hero', slug, ws, 'jpg')}" alt="{esc(cap)}" width="{meta['w']}" height="{meta['h']}" fetchpriority="high" decoding="async">
+          <img src="assets/img/hero/{slug}-{base}.jpg" sizes="100vw" srcset="{srcset('assets/img/hero', slug, ws, 'jpg')}" alt="{esc(cap)}" width="{m['w']}" height="{m['h']}" fetchpriority="high" decoding="async">
         </picture>''')
-    return html
 
-# ---------------------------------------------------------------- build owner portrait
+# ---------------------------------------------------------------- owner portrait
 def build_owner():
-    outdir = os.path.join(IMG, "owner")
     srcs = list_images(os.path.join(SRC, "owner"))
-    if not srcs:
-        return None
+    if not srcs: return None
+    outdir = os.path.join(IMG, "owner")
     if os.path.isdir(outdir): shutil.rmtree(outdir)
-    src = srcs[0]
-    slug = slug_for(src)
-    meta = render(src, outdir, slug, OWNER_WIDTHS)
-    ws = meta["widths"]
+    src = srcs[0]; slug = slugify(caption_from(src)) + "-" + uid(src)
+    m = render(src, outdir, slug, OWNER_WIDTHS); ws = m["widths"]
     cap = caption_from(src) or "Portrait of Nikolaus Perkovich, owner of Perk General Contracting"
-    thumb = pick(ws, 600)
-    sizes = "(max-width:800px) 80vw, 34vw"
-    html = (
+    thumb = pick(ws, 600); sizes = "(max-width:800px) 80vw, 34vw"
+    return (
 f'''            <picture>
               <source type="image/webp" sizes="{sizes}" srcset="{srcset('assets/img/owner', slug, ws, 'webp')}">
-              <img src="assets/img/owner/{slug}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset('assets/img/owner', slug, ws, 'jpg')}" alt="{esc(cap)}" width="{meta['w']}" height="{meta['h']}" loading="lazy" decoding="async">
+              <img src="assets/img/owner/{slug}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset('assets/img/owner', slug, ws, 'jpg')}" alt="{esc(cap)}" width="{m['w']}" height="{m['h']}" loading="lazy" decoding="async">
             </picture>''')
-    return html
 
-# ---------------------------------------------------------------- inject
+# ---------------------------------------------------------------- inject + main
 def inject(page, blocks):
     path = os.path.join(ROOT, page)
     html = open(path).read()
@@ -218,13 +293,15 @@ def inject(page, blocks):
 
 def main():
     print("Building photos from site-photos/ …")
-    gal_html, gal_n = build_gallery();   print(f"  gallery:  {gal_n} photos")
-    feat_html, feat_n = build_featured(); print(f"  featured: {feat_n} photos")
-    hero_html = build_hero();             print(f"  hero:     {'set' if hero_html else 'unchanged (no image)'}")
-    owner_html = build_owner();           print(f"  owner:    {'set' if owner_html else 'unchanged (no image)'}")
+    cards, projects_json, projects_data = build_projects(); print(f"  gallery:  {len(projects_data)} projects")
+    feat_html, feat_n = build_featured(projects_data);      print(f"  featured: {feat_n} projects")
+    hero_html = build_hero();                   print(f"  hero:     {'set' if hero_html else 'unchanged (no image)'}")
+    owner_html = build_owner();                 print(f"  owner:    {'set' if owner_html else 'unchanged (no image)'}")
 
+    data_script = '  <script type="application/json" id="projects-data">' + projects_json + '</script>'
     inject("gallery.html", [
-        ("<!-- PHOTOS:GALLERY:START -->", "<!-- PHOTOS:GALLERY:END -->", gal_html),
+        ("<!-- PHOTOS:GALLERY:START -->", "<!-- PHOTOS:GALLERY:END -->", cards),
+        ("<!-- PHOTOS:DATA:START -->", "<!-- PHOTOS:DATA:END -->", data_script),
     ])
     inject("index.html", [
         ("<!-- PHOTOS:FEATURED:START -->", "<!-- PHOTOS:FEATURED:END -->", feat_html),

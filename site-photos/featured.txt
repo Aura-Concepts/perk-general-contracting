@@ -1,0 +1,11 @@
+# Home page "A look at our work" tiles.
+# One project per line, in display order (max 6). The first tile is the big one.
+# Format:  Project name | Optional short caption
+# (If you leave off "| caption", the project's title is used.)
+
+Audi Dealership | Audi Showroom
+Modern Kitchen Remodel | Modern Kitchen
+Stone Fireplace Living Room | Stone Fireplace
+Commercial Outbuilding | Before & After
+Custom Deck | Custom Deck
+Volkswagen Dealership | VW Dealership
