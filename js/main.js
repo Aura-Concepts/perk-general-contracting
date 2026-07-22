@@ -223,6 +223,16 @@
       }
     };
 
+    /* Phone field: allow only digits and common phone punctuation. */
+    var phone = form.querySelector("#phone");
+    if (phone) {
+      phone.setAttribute("inputmode", "tel");
+      phone.addEventListener("input", function () {
+        var cleaned = phone.value.replace(/[^0-9+()\-.\s]/g, "");
+        if (cleaned !== phone.value) phone.value = cleaned;
+      });
+    }
+
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (!form.checkValidity()) { form.reportValidity(); return; }
