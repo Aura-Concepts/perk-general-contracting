@@ -105,13 +105,14 @@
       if (!lbList.length) return;
       lbIndex = (i + lbList.length) % lbList.length;
       var it = lbList[lbIndex];
-      lbImg.style.opacity = "0";          // hide until the new image can paint
-      lbImg.alt = it.alt || "";
+      // Swap in a fresh <img> so the previous photo's pixels can't flash while
+      // the new one loads — the browser renders the new src natively, right away.
+      var fresh = document.createElement("img");
+      fresh.alt = it.alt || "";
+      fresh.src = it.full;
+      lbImg.replaceWith(fresh);
+      lbImg = fresh;
       if (lbCap) lbCap.textContent = it.alt || "";
-      lbImg.src = it.full;
-      var reveal = function () { lbImg.style.opacity = "1"; };
-      if (lbImg.decode) { lbImg.decode().then(reveal).catch(reveal); }
-      else { lbImg.onload = reveal; }
     };
     var openLightbox = function (list, i) {
       lbList = list; lbFocus = document.activeElement; lbShow(i);
