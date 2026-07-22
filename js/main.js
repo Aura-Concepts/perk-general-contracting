@@ -213,18 +213,44 @@
   /* --------------------------------------------------- contact form UX */
   var form = document.querySelector(".form form");
   if (form) {
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      if (!form.checkValidity()) { form.reportValidity(); return; }
+    var showSuccess = function () {
       var success = document.querySelector(".form__success");
-      var fields = form.querySelector(".form__fields");
+      var fields = document.querySelector(".form__fields");
       if (success && fields) {
         fields.style.display = "none";
         success.classList.add("is-visible");
         success.setAttribute("role", "status");
       }
-      /* NOTE: wire up to a real handler (Formspree / Netlify / email service)
-         by setting the form action + method. This is a front-end demo submit. */
+    };
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!form.checkValidity()) { form.reportValidity(); return; }
+
+      var error = form.querySelector(".form__error");
+      var button = form.querySelector("button[type=submit]");
+      if (error) error.hidden = true;
+      if (button) button.disabled = true;
+
+      /* Post to the form's action (Formspree) via fetch so we can show the
+         inline "Thank you" panel without a full-page redirect. */
+      fetch(form.action, {
+        method: "POST",
+        body: new FormData(form),
+        headers: { Accept: "application/json" }
+      })
+        .then(function (res) {
+          if (res.ok) {
+            showSuccess();
+          } else {
+            if (button) button.disabled = false;
+            if (error) error.hidden = false;
+          }
+        })
+        .catch(function () {
+          if (button) button.disabled = false;
+          if (error) error.hidden = false;
+        });
     });
   }
 
