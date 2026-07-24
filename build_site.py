@@ -26,7 +26,7 @@ You do NOT need to touch any code to manage photos. Edit the folders in
 Then run:  python3 build_site.py
 """
 import os, re, json, shutil, hashlib
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageDraw
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC  = os.path.join(ROOT, "site-photos")
@@ -282,6 +282,51 @@ f'''            <picture>
               <img src="assets/img/owner/{slug}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset('assets/img/owner', slug, ws, 'jpg')}" alt="{esc(cap)}" width="{m['w']}" height="{m['h']}" loading="lazy" decoding="async">
             </picture>''')
 
+# ---------------------------------------------------------------- favicons
+LOGO      = os.path.join(ROOT, "assets", "logo", "perk-logo-white.png")
+ICON_BG   = (20, 39, 63, 255)     # navy, matches --ink / theme-color
+ICON_ROUND = 0.22                 # corner radius as a fraction of the icon size
+# (filename, size, padding fraction, full_bleed)
+#   full_bleed=False -> rounded square with transparent corners (browser tabs)
+#   full_bleed=True  -> solid square, no transparency. iOS and Android apply
+#                       their own mask, and iOS renders transparency as black.
+ICONS = [("favicon-16.png",        16,  .12, False),
+         ("favicon-32.png",        32,  .12, False),
+         ("icon-192.png",          192, .12, False),
+         ("icon-512.png",          512, .12, False),
+         ("apple-touch-icon.png",  180, .12, True),
+         ("icon-512-maskable.png", 512, .20, True)]   # .20 keeps art in Android's safe zone
+
+def build_icons():
+    """Regenerate the browser-tab / app icons from assets/logo/perk-logo-white.png
+    so swapping the logo also updates the favicons. Output is deterministic, so
+    re-running with an unchanged logo rewrites identical bytes (no git churn)."""
+    if not os.path.exists(LOGO):
+        return 0
+    badge = Image.open(LOGO).convert("RGBA")
+    box = badge.getbbox()                 # trim transparent padding so the mark fills the icon
+    if box: badge = badge.crop(box)
+
+    def make(size, pad_ratio, full_bleed=False):
+        if full_bleed:
+            canvas = Image.new("RGBA", (size, size), ICON_BG)
+        else:
+            mask = Image.new("L", (size, size), 0)
+            ImageDraw.Draw(mask).rounded_rectangle(
+                [0, 0, size - 1, size - 1], radius=int(size * ICON_ROUND), fill=255)
+            canvas = Image.composite(Image.new("RGBA", (size, size), ICON_BG),
+                                     Image.new("RGBA", (size, size), (0, 0, 0, 0)), mask)
+        pad = int(size * pad_ratio)
+        b = badge.copy()
+        b.thumbnail((size - 2 * pad, size - 2 * pad), Image.LANCZOS)
+        canvas.alpha_composite(b, ((size - b.width) // 2, (size - b.height) // 2))
+        return canvas
+
+    for name, size, pad, bleed in ICONS:
+        make(size, pad, bleed).save(os.path.join(IMG, name))
+    make(48, .12).save(os.path.join(IMG, "favicon.ico"), sizes=[(16, 16), (32, 32), (48, 48)])
+    return len(ICONS) + 1
+
 # ---------------------------------------------------------------- reviews
 def build_reviews():
     """Parse content/reviews.txt into testimonial cards.
@@ -339,6 +384,7 @@ def main():
     hero_html = build_hero();                   print(f"  hero:     {'set' if hero_html else 'unchanged (no image)'}")
     owner_html = build_owner();                 print(f"  owner:    {'set' if owner_html else 'unchanged (no image)'}")
     rev_home, rev_all = build_reviews();        print(f"  reviews:  {rev_all.count('<figure')} reviews")
+    n_icons = build_icons();                    print(f"  icons:    {n_icons} favicons from the logo")
 
     data_script = '  <script type="application/json" id="projects-data">' + projects_json + '</script>'
     inject("gallery.html", [
