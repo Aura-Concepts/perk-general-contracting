@@ -114,6 +114,25 @@ Volkswagen Dealership | VW Dealership
 
 ---
 
+## Logo
+
+The logo lives in **`site-photos/logo/`**:
+
+- **`perk-logo-white.png`** — the one the site uses (white badge, shown on the
+  dark header/footer). To change the logo, replace this file (keep the name,
+  keep it white-on-transparent) and rebuild.
+- **`perk-logo-redblue.png`** — the red/blue version, kept for light backgrounds.
+
+On rebuild, these are copied to `assets/logo/` and the **favicons / app icons
+regenerate from the white logo automatically** — so a logo swap updates the
+header, footer, and the browser-tab icon in one step. Don't edit `assets/logo/`
+directly; it's overwritten each build.
+
+> If a new logo is a very different shape, the `width`/`height` on the two
+> `<img>` tags per page (header ~46, footer ~62) may need adjusting to match.
+
+---
+
 ## Reviews
 
 Reviews live in **`content/reviews.txt`** (not in `site-photos/`). Each review

@@ -6,6 +6,7 @@ You do NOT need to touch any code to manage photos. Edit the folders in
 `site-photos/` and run this script (or double-click `rebuild.command`).
 
   site-photos/
+    logo/          the logo(s) -> copied to assets/logo/ + favicons generated
     hero/          one image -> the big homepage banner
     owner/         one image -> the portrait on the About page
     featured.txt   -> which PROJECTS show on the home "A look at our work" grid
@@ -283,7 +284,7 @@ f'''            <picture>
             </picture>''')
 
 # ---------------------------------------------------------------- favicons
-LOGO      = os.path.join(ROOT, "assets", "logo", "perk-logo-white.png")
+LOGO      = os.path.join(SRC, "logo", "perk-logo-white.png")   # source of truth
 ICON_BG   = (20, 39, 63, 255)     # navy, matches --ink / theme-color
 ICON_ROUND = 0.22                 # corner radius as a fraction of the icon size
 # (filename, size, padding fraction, full_bleed)
@@ -297,8 +298,25 @@ ICONS = [("favicon-16.png",        16,  .12, False),
          ("apple-touch-icon.png",  180, .12, True),
          ("icon-512-maskable.png", 512, .20, True)]   # .20 keeps art in Android's safe zone
 
+def build_logo():
+    """Sync the logo files from their source (site-photos/logo/) to assets/logo/,
+    which the pages load. Keeps the model consistent: you edit site-photos/, the
+    build writes assets/. Copies bytes as-is (deterministic, no git churn)."""
+    src = os.path.join(SRC, "logo")
+    if not os.path.isdir(src):
+        return 0
+    dst = os.path.join(ROOT, "assets", "logo")
+    if os.path.isdir(dst): shutil.rmtree(dst)
+    os.makedirs(dst)
+    n = 0
+    for f in sorted(os.listdir(src)):
+        if f.lower().endswith((".png", ".svg", ".webp")) and not f.startswith("."):
+            shutil.copy2(os.path.join(src, f), os.path.join(dst, f))
+            n += 1
+    return n
+
 def build_icons():
-    """Regenerate the browser-tab / app icons from assets/logo/perk-logo-white.png
+    """Regenerate the browser-tab / app icons from the source logo
     so swapping the logo also updates the favicons. Output is deterministic, so
     re-running with an unchanged logo rewrites identical bytes (no git churn)."""
     if not os.path.exists(LOGO):
@@ -384,6 +402,7 @@ def main():
     hero_html = build_hero();                   print(f"  hero:     {'set' if hero_html else 'unchanged (no image)'}")
     owner_html = build_owner();                 print(f"  owner:    {'set' if owner_html else 'unchanged (no image)'}")
     rev_home, rev_all = build_reviews();        print(f"  reviews:  {rev_all.count('<figure')} reviews")
+    n_logo = build_logo();                      print(f"  logo:     {n_logo} logo files synced to assets/logo")
     n_icons = build_icons();                    print(f"  icons:    {n_icons} favicons from the logo")
 
     data_script = '  <script type="application/json" id="projects-data">' + projects_json + '</script>'
