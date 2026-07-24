@@ -282,6 +282,47 @@ f'''            <picture>
               <img src="assets/img/owner/{slug}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset('assets/img/owner', slug, ws, 'jpg')}" alt="{esc(cap)}" width="{m['w']}" height="{m['h']}" loading="lazy" decoding="async">
             </picture>''')
 
+# ---------------------------------------------------------------- reviews
+def build_reviews():
+    """Parse content/reviews.txt into testimonial cards.
+    Returns (home_html, all_html): first 5 for the homepage, all for reviews.html."""
+    path = os.path.join(ROOT, "content", "reviews.txt")
+    if not os.path.exists(path):
+        return "", ""
+    blocks, cur = [], []
+    for raw in open(path):
+        line = raw.rstrip("\n")
+        if line.strip().startswith("#"):
+            continue
+        if not line.strip():
+            if cur: blocks.append(cur); cur = []
+            continue
+        cur.append(line)
+    if cur: blocks.append(cur)
+
+    cards = []
+    for b in blocks:
+        parts = [p.strip() for p in b[0].split("|")]
+        name = parts[0] if parts else "Anonymous"
+        role = parts[1] if len(parts) > 1 and parts[1] else ""
+        try: stars = max(1, min(5, int(parts[2]))) if len(parts) > 2 and parts[2] else 5
+        except ValueError: stars = 5
+        source = parts[3] if len(parts) > 3 and parts[3] else ""
+        text = " ".join(l.strip() for l in b[1:]).strip()
+        words = [w for w in re.split(r'\s+', name) if w]
+        initials = (words[0][0] + (words[-1][0] if len(words) > 1 else "")).upper()
+        star_row = "★" * stars + "☆" * (5 - stars)
+        badge = f'<span class="tst-source">via {esc(source)}</span>' if source else ""
+        role_html = f'<span class="role">{esc(role)}</span>' if role else ""
+        cards.append(
+f'''          <figure class="tst reveal">
+            <div class="stars" aria-label="{stars} out of 5 stars">{star_row}</div>
+            <blockquote>&ldquo;{esc(text)}&rdquo;</blockquote>
+            <figcaption><span class="avatar" aria-hidden="true">{esc(initials)}</span><span><span class="who">{esc(name)}</span>{role_html}</span>{badge}</figcaption>
+          </figure>''')
+
+    return "\n".join(cards[:5]), "\n".join(cards)
+
 # ---------------------------------------------------------------- inject + main
 def inject(page, blocks):
     path = os.path.join(ROOT, page)
@@ -297,6 +338,7 @@ def main():
     feat_html, feat_n = build_featured(projects_data);      print(f"  featured: {feat_n} projects")
     hero_html = build_hero();                   print(f"  hero:     {'set' if hero_html else 'unchanged (no image)'}")
     owner_html = build_owner();                 print(f"  owner:    {'set' if owner_html else 'unchanged (no image)'}")
+    rev_home, rev_all = build_reviews();        print(f"  reviews:  {rev_all.count('<figure')} reviews")
 
     data_script = '  <script type="application/json" id="projects-data">' + projects_json + '</script>'
     inject("gallery.html", [
@@ -306,9 +348,13 @@ def main():
     inject("index.html", [
         ("<!-- PHOTOS:FEATURED:START -->", "<!-- PHOTOS:FEATURED:END -->", feat_html),
         ("<!-- PHOTOS:HERO:START -->", "<!-- PHOTOS:HERO:END -->", hero_html),
+        ("<!-- REVIEWS:HOME:START -->", "<!-- REVIEWS:HOME:END -->", rev_home),
     ])
     inject("about.html", [
         ("<!-- PHOTOS:OWNER:START -->", "<!-- PHOTOS:OWNER:END -->", owner_html),
+    ])
+    inject("reviews.html", [
+        ("<!-- REVIEWS:ALL:START -->", "<!-- REVIEWS:ALL:END -->", rev_all),
     ])
     print("Done. Refresh the site to see your changes.")
 

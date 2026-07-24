@@ -315,7 +315,7 @@ p { text-wrap: pretty; }
 .tst .stars { color: var(--accent); letter-spacing: .1em; font-size: .95rem; }
 .tst blockquote { font-size: 1.02rem; color: var(--text-soft); line-height: 1.6; }
 .tst figcaption { display: flex; align-items: center; gap: .8rem; margin-top: auto; }
-.tst figcaption > span:last-child { display: flex; flex-direction: column; line-height: 1.3; }
+.tst figcaption > span:not(.avatar):not(.tst-source) { display: flex; flex-direction: column; line-height: 1.3; }
 .tst .avatar { flex: none; width: 42px; height: 42px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-family: var(--font-display); font-size: 1.05rem; }
 .tst .who { font-weight: 600; color: var(--ink); font-size: .95rem; }
 .tst .role { font-size: .82rem; color: var(--muted); }
@@ -323,6 +323,24 @@ p { text-wrap: pretty; }
 .section--ink .tst blockquote { color: var(--on-dark); }
 .section--ink .tst .who { color: #fff; }
 .section--ink .tst .avatar { background: var(--accent-2); }
+/* "via Google" (or other source) badge on a review */
+.tst-source { margin-left: auto; align-self: center; font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--cream); border: 1px solid var(--line); padding: .3em .7em; border-radius: 100px; white-space: nowrap; }
+
+/* -------------------------------------------------------- reviews page */
+.reviews-summary { display: flex; align-items: center; gap: .9rem; justify-content: center; text-align: center; margin-bottom: 2.4rem; flex-wrap: wrap; }
+.reviews-summary .stars { color: var(--accent); font-size: 1.5rem; letter-spacing: .1em; }
+.reviews-summary p { color: var(--text-soft); font-size: 1.05rem; }
+.reviews-summary strong { color: var(--ink); }
+
+/* star-rating input (CSS-only; radios in reverse DOM order).
+   Scoped under .field so it beats the generic .field label rule. */
+.field .rating { display: inline-flex; flex-direction: row-reverse; justify-content: flex-end; border: 0; padding: 0; margin: .1rem 0 0; gap: .15rem; width: max-content; }
+.field .rating input { position: absolute; opacity: 0; width: 0; height: 0; }
+.field .rating label { font-size: 2rem; line-height: 1; color: var(--line); font-weight: 400; cursor: pointer; margin: 0; transition: color .15s, transform .15s var(--ease); }
+.field .rating label:hover { transform: scale(1.12); }
+.field .rating input:checked ~ label,
+.field .rating label:hover, .field .rating label:hover ~ label { color: var(--accent); }
+.field .rating input:focus-visible ~ label:first-of-type { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 
 /* ---------------------------------------------------------------- CTA band */
 .cta-band { position: relative; overflow: hidden; background: var(--ink); color: #fff; }
