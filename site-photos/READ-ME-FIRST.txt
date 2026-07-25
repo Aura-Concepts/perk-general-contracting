@@ -4,10 +4,11 @@ HOW TO UPDATE THE WEBSITE PHOTOS
 Add, remove, or rename photos in these folders, then double-click
 "rebuild.command" in the main project folder.
 
-  hero/       = big banner photo on the home page (1 photo)
-  featured/   = "A look at our work" grid on the home page (up to 6; number them 1-6)
-  owner/      = portrait on the About page (1 photo)
-  gallery/... = the Gallery page, one folder per category
+  hero/        = big banner photo on the home page (1 photo)
+  staff/       = team headshots for the About page (one per person)
+  staff.txt    = who's on the team: names, titles, descriptions
+  featured.txt = which projects show on the home "A look at our work" grid
+  projects/... = the Gallery, one folder per project
 
 THE FILE NAME = THE CAPTION shown on the site.
 A number at the front (e.g. "01 ...") sets the order and is removed from the caption.

@@ -8,7 +8,9 @@ You do NOT need to touch any code to manage photos. Edit the folders in
   site-photos/
     logo/          the logo(s) -> copied to assets/logo/ + favicons generated
     hero/          one image -> the big homepage banner
-    owner/         one image -> the portrait on the About page
+    staff/         one headshot per team member (About page)
+    staff.txt      -> who is on the team: "Name | Title" + description blocks;
+                      first person = owner spotlight, the rest = team cards
     featured.txt   -> which PROJECTS show on the home "A look at our work" grid
     projects/      -> the Gallery, organised as PROJECTS:
 
@@ -44,7 +46,7 @@ EXTS = (".jpg", ".jpeg", ".png", ".webp")
 PHOTO_WIDTHS    = [400, 640, 900, 1400]
 FEATURED_WIDTHS = [400, 640, 960, 1280]
 HERO_WIDTHS     = [960, 1280, 1600, 1920, 2400]
-OWNER_WIDTHS    = [400, 600, 800, 1000]
+STAFF_WIDTHS    = [400, 600, 800, 1000]
 
 # ---------------------------------------------------------------- helpers
 def caption_from(name):
@@ -267,21 +269,87 @@ f'''        <picture>
           <img src="assets/img/hero/{slug}-{base}.jpg" sizes="100vw" srcset="{srcset('assets/img/hero', slug, ws, 'jpg')}" alt="{esc(cap)}" width="{m['w']}" height="{m['h']}" fetchpriority="high" decoding="async">
         </picture>''')
 
-# ---------------------------------------------------------------- owner portrait
-def build_owner():
-    srcs = list_images(os.path.join(SRC, "owner"))
-    if not srcs: return None
-    outdir = os.path.join(IMG, "owner")
+# ---------------------------------------------------------------- staff (About page)
+def parse_staff():
+    """site-photos/staff.txt -> [{"name", "title", "desc"}] in file order.
+    Blocks separated by blank lines: "Name | Title" then description lines."""
+    path = os.path.join(SRC, "staff.txt")
+    if not os.path.exists(path):
+        return []
+    blocks, cur = [], []
+    for raw in open(path):
+        line = raw.rstrip("\n")
+        if line.strip().startswith("#"):
+            continue
+        if not line.strip():
+            if cur: blocks.append(cur); cur = []
+            continue
+        cur.append(line)
+    if cur: blocks.append(cur)
+    people = []
+    for b in blocks:
+        parts = [p.strip() for p in b[0].split("|")]
+        people.append({"name": parts[0],
+                       "title": parts[1] if len(parts) > 1 else "",
+                       "desc": " ".join(l.strip() for l in b[1:]).strip()})
+    return people
+
+def build_staff():
+    """The About-page team. staff.txt says who (and in what order); staff/ holds
+    one headshot per person, matched by the person's name in the file name.
+    The first person becomes the owner spotlight portrait (their story text is
+    hand-written in about.html); everyone else becomes a "Meet the team" card."""
+    people = parse_staff()
+    srcs = list_images(os.path.join(SRC, "staff"))
+    if not people or not srcs:
+        return None, None, 0
+    outdir = os.path.join(IMG, "staff")
     if os.path.isdir(outdir): shutil.rmtree(outdir)
-    src = srcs[0]; slug = slugify(caption_from(src)) + "-" + uid(src)
-    m = render(src, outdir, slug, OWNER_WIDTHS); ws = m["widths"]
-    cap = caption_from(src) or "Portrait of Nikolaus Perkovich, owner of Perk General Contracting"
-    thumb = pick(ws, 600); sizes = "(max-width:800px) 80vw, 34vw"
-    return (
+
+    def photo_for(name):
+        key = slugify(name)
+        for s in srcs:
+            if key in slugify(caption_from(s)):
+                return s
+        return None
+
+    spotlight, cards, n = None, [], 0
+    for i, p in enumerate(people):
+        src = photo_for(p["name"])
+        if not src:
+            print(f"  ! staff: no photo in staff/ matches \"{p['name']}\" — skipped")
+            continue
+        slug = slugify(p["name"]) + "-" + uid(src)
+        m = render(src, outdir, slug, STAFF_WIDTHS); ws = m["widths"]
+        cap = f"Portrait of {p['name']}, {p['title']} at Perk General Contracting" if p["title"] \
+              else f"Portrait of {p['name']}"
+        n += 1
+        if i == 0:
+            thumb = pick(ws, 600); sizes = "(max-width:800px) 80vw, 34vw"
+            spotlight = (
 f'''            <picture>
-              <source type="image/webp" sizes="{sizes}" srcset="{srcset('assets/img/owner', slug, ws, 'webp')}">
-              <img src="assets/img/owner/{slug}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset('assets/img/owner', slug, ws, 'jpg')}" alt="{esc(cap)}" width="{m['w']}" height="{m['h']}" loading="lazy" decoding="async">
+              <source type="image/webp" sizes="{sizes}" srcset="{srcset('assets/img/staff', slug, ws, 'webp')}">
+              <img src="assets/img/staff/{slug}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset('assets/img/staff', slug, ws, 'jpg')}" alt="{esc(cap)}" width="{m['w']}" height="{m['h']}" loading="lazy" decoding="async">
             </picture>''')
+        else:
+            thumb = pick(ws, 600); sizes = "(max-width:640px) 92vw, (max-width:980px) 46vw, 370px"
+            delay = f' data-reveal-delay="{min(len(cards), 3)}"' if cards else ''
+            bio = f'\n            <p class="team-card__bio">{esc(p["desc"])}</p>' if p["desc"] else ''
+            cards.append(
+f'''        <article class="team-card reveal"{delay}>
+          <div class="team-card__media">
+            <picture>
+              <source type="image/webp" sizes="{sizes}" srcset="{srcset('assets/img/staff', slug, ws, 'webp')}">
+              <img src="assets/img/staff/{slug}-{thumb}.jpg" sizes="{sizes}" srcset="{srcset('assets/img/staff', slug, ws, 'jpg')}" alt="{esc(cap)}" width="{m['w']}" height="{m['h']}" loading="lazy" decoding="async">
+            </picture>
+          </div>
+          <div class="team-card__body">
+            <h3>{esc(p['name'])}</h3>
+            <p class="team-card__role">{esc(p['title'])}</p>{bio}
+          </div>
+        </article>''')
+
+    return spotlight, "\n".join(cards) if cards else None, n
 
 # ---------------------------------------------------------------- favicons
 LOGO      = os.path.join(SRC, "logo", "perk-logo-white.png")   # source of truth
@@ -400,7 +468,7 @@ def main():
     cards, projects_json, projects_data = build_projects(); print(f"  gallery:  {len(projects_data)} projects")
     feat_html, feat_n = build_featured(projects_data);      print(f"  featured: {feat_n} projects")
     hero_html = build_hero();                   print(f"  hero:     {'set' if hero_html else 'unchanged (no image)'}")
-    owner_html = build_owner();                 print(f"  owner:    {'set' if owner_html else 'unchanged (no image)'}")
+    staff_spot, staff_grid, n_staff = build_staff(); print(f"  staff:    {n_staff} people (spotlight + {staff_grid.count('team-card reveal') if staff_grid else 0} cards)")
     rev_home, rev_all = build_reviews();        print(f"  reviews:  {rev_all.count('<figure')} reviews")
     n_logo = build_logo();                      print(f"  logo:     {n_logo} logo files synced to assets/logo")
     n_icons = build_icons();                    print(f"  icons:    {n_icons} favicons from the logo")
@@ -416,7 +484,8 @@ def main():
         ("<!-- REVIEWS:HOME:START -->", "<!-- REVIEWS:HOME:END -->", rev_home),
     ])
     inject("about.html", [
-        ("<!-- PHOTOS:OWNER:START -->", "<!-- PHOTOS:OWNER:END -->", owner_html),
+        ("<!-- STAFF:PORTRAIT:START -->", "<!-- STAFF:PORTRAIT:END -->", staff_spot),
+        ("<!-- STAFF:GRID:START -->", "<!-- STAFF:GRID:END -->", staff_grid),
     ])
     inject("reviews.html", [
         ("<!-- REVIEWS:ALL:START -->", "<!-- REVIEWS:ALL:END -->", rev_all),

@@ -1,0 +1,36 @@
+# The team shown on the About page. One block per person, in this order:
+#
+#   Name | Title
+#   Description (one short paragraph — it can wrap over several lines).
+#
+# Leave a blank line between people. Lines starting with # are ignored.
+#
+# Each person also needs a photo in the staff/ folder with their name in the
+# file name (a leading number there is just for tidiness — the order on the
+# page comes from this file).
+#
+# The FIRST person listed is the big owner spotlight at the top of the About
+# page. The spotlight's story text is written in about.html itself, so a
+# description here is only needed for everyone else — they become the cards
+# in the "Meet the team" section.
+
+Nikolaus Perkovich | Owner & General Contractor
+
+Jim Perkovich | Superintendent
+The boss on-site who directs the daily work, coordinates subcontractors,
+and enforces safety and scheduling.
+
+Andre Flatt | Chief Financial Officer
+Andre, our chief financial officer, has been around the home building and
+remodeling process since he was a kid helping his father's construction
+company. He has been involved with almost all functions and advocates for
+our clients to fulfill their needs with our operations team. He has owned
+his own companies as well as holds a bachelor's degree from Simpson College
+and a master's degree from Southern Utah University. He originates from the
+south side of Des Moines.
+
+Anston Sorensen | Field & Digital Operations Assistant
+Anston runs the digital side of the business — the website, photography,
+and day-to-day marketing — and lends a hand in the field wherever the crew
+needs one. Like Andre, he grew up on the south side of Des Moines, and he
+is currently pursuing a bachelor's degree at the University of Florida.

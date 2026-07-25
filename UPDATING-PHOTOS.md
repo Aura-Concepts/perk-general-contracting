@@ -7,7 +7,8 @@ You never touch any code. Everything is controlled by the folders inside
 ```
 site-photos/
 ├── hero/          → the big banner photo at the top of the home page (1 photo)
-├── owner/         → the portrait on the About page (1 photo)
+├── staff/         → one headshot per team member (About page)
+├── staff.txt      → who's on the team: names, titles, descriptions
 ├── featured.txt   → which PROJECTS show on the home "A look at our work" grid
 └── projects/      → the Gallery
 ```
@@ -106,11 +107,36 @@ Volkswagen Dealership | VW Dealership
 
 ---
 
-## Hero & About photo
+## Hero photo
 
 - **`hero/`** — drop in one image for the big home-page banner. Name it
   descriptively (that becomes its alt text).
-- **`owner/`** — one portrait for the About page.
+
+---
+
+## The team (About page)
+
+The About page shows the **owner spotlight** (big photo + story) and a
+**"Meet the team"** card grid. Both are controlled by:
+
+- **`site-photos/staff.txt`** — one block per person, in the order they appear:
+
+  ```
+  Name | Title
+  A short description (a sentence or three — it can wrap over
+  several lines).
+  ```
+
+  Leave a blank line between people. The **first person** listed is the owner
+  spotlight — their story text is written in `about.html`, so their
+  description here can be left off. Everyone else becomes a card.
+
+- **`site-photos/staff/`** — one headshot per person. The file name just needs
+  to **contain the person's name** (e.g. `02 Jim Perkovich.jpg`). Card photos
+  display as a square crop, so roomy shots are fine.
+
+To add, remove, or reorder people: edit `staff.txt`, make sure each person has
+a photo in `staff/`, and rebuild.
 
 ---
 
