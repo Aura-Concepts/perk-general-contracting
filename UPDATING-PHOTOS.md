@@ -114,6 +114,34 @@ Volkswagen Dealership | VW Dealership
 
 ---
 
+## The other photos on Home & Services
+
+A few photos aren't gallery cards — the one beside **"Built to brand
+standards"** on the home page, and the two on the **Services** page. Those are
+listed in **`site-photos/editorial.txt`**, one per line:
+
+```
+slot name | project photo | alt text
+```
+
+Example:
+
+```
+kitchen-modern | Residential/Basement/01 Walkout Basement Finish/07 Black cabinet kitchenette with quartz island.jpg | Contemporary kitchenette with dark cabinetry and white quartz countertops
+```
+
+The **photo** is a path to any picture already in `site-photos/projects/`, so
+these always match the real project photos. To swap one out, point the middle
+column at a different photo, update the alt text to describe it, and rebuild.
+
+**Leave the slot names alone** — they're wired to the page.
+
+> Two older photos (the barndominium on Home and the red barn on About) aren't
+> in this file. We never got the original high-resolution files for them, so
+> they stay as-is until better photos turn up.
+
+---
+
 ## The team (About page)
 
 The About page shows the **owner spotlight** (big photo + story) and a

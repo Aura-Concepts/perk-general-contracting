@@ -45,6 +45,7 @@ CATEGORIES = {
 EXTS = (".jpg", ".jpeg", ".png", ".webp")
 PHOTO_WIDTHS    = [400, 640, 900, 1400]
 FEATURED_WIDTHS = [400, 640, 960, 1280]
+EDITORIAL_WIDTHS = [640, 960, 1280, 1600]
 HERO_WIDTHS     = [960, 1280, 1600, 1920, 2400]
 STAFF_WIDTHS    = [400, 600, 800, 1000]
 
@@ -255,6 +256,39 @@ f'''          <a href="gallery.html?project={p['id']}"{class_attr}>
             <span class="cap">{esc(cap)}</span>
           </a>''')
     return "\n".join(html), len(sel)
+
+# ---------------------------------------------------------------- editorial (fixed page photos)
+def build_editorial():
+    """The fixed photos on index/services that aren't gallery cards.
+
+    site-photos/editorial.txt maps a slot -> a project photo + alt text, so these
+    are regenerated from the same originals as everything else instead of being
+    hand-placed files. Returns {slot: <picture> html}."""
+    outdir = os.path.join(IMG, "editorial")
+    if os.path.isdir(outdir): shutil.rmtree(outdir)
+    txt = os.path.join(SRC, "editorial.txt")
+    blocks = {}
+    if not os.path.exists(txt): return blocks
+    sizes = "(max-width:800px) 90vw, 45vw"
+    d = "assets/img/editorial"
+    for line in open(txt):
+        line = line.strip()
+        if not line or line.startswith("#"): continue
+        parts = [p.strip() for p in line.split("|")]
+        if len(parts) < 3: continue
+        slot, rel, alt = parts[0], parts[1], parts[2]
+        src = os.path.join(SRC, "projects", rel)
+        if not os.path.isfile(src):
+            print(f"  ! editorial: no such photo for '{slot}': {rel}")
+            continue
+        m = render(src, outdir, slot, EDITORIAL_WIDTHS)
+        ws = m["widths"]; base = pick(ws, 960)
+        blocks[slot] = (
+f'''            <picture>
+              <source type="image/webp" sizes="{sizes}" srcset="{srcset(d, slot, ws, 'webp')}">
+              <img src="{d}/{slot}-{base}.jpg" sizes="{sizes}" srcset="{srcset(d, slot, ws, 'jpg')}" alt="{esc(alt)}" width="{base}" height="{round(base * m['ar'])}" loading="lazy" decoding="async">
+            </picture>''')
+    return blocks
 
 # ---------------------------------------------------------------- hero
 def build_hero():
@@ -472,12 +506,15 @@ def main():
     cards, projects_json, projects_data = build_projects(); print(f"  gallery:  {len(projects_data)} projects")
     feat_html, feat_n = build_featured(projects_data);      print(f"  featured: {feat_n} projects")
     hero_html = build_hero();                   print(f"  hero:     {'set' if hero_html else 'unchanged (no image)'}")
+    editorial = build_editorial();              print(f"  editorial: {len(editorial)} fixed page photos")
     staff_spot, staff_grid, n_staff = build_staff(); print(f"  staff:    {n_staff} people (spotlight + {staff_grid.count('team-card reveal') if staff_grid else 0} cards)")
     rev_home, rev_all = build_reviews();        print(f"  reviews:  {rev_all.count('<figure')} reviews")
     n_logo = build_logo();                      print(f"  logo:     {n_logo} logo files synced to assets/logo")
     n_icons = build_icons();                    print(f"  icons:    {n_icons} favicons from the logo")
 
     data_script = '  <script type="application/json" id="projects-data">' + projects_json + '</script>'
+    ed_blocks = [(f"<!-- PHOTOS:EDITORIAL:{s}:START -->", f"<!-- PHOTOS:EDITORIAL:{s}:END -->", h)
+                 for s, h in editorial.items()]
     inject("gallery.html", [
         ("<!-- PHOTOS:GALLERY:START -->", "<!-- PHOTOS:GALLERY:END -->", cards),
         ("<!-- PHOTOS:DATA:START -->", "<!-- PHOTOS:DATA:END -->", data_script),
@@ -487,7 +524,8 @@ def main():
         ("<!-- PHOTOS:HERO:START -->", "<!-- PHOTOS:HERO:END -->", hero_html),
         ("<!-- REVIEWS:HOME:START -->", "<!-- REVIEWS:HOME:END -->", rev_home),
         ("<!-- PHOTOS:DATA:START -->", "<!-- PHOTOS:DATA:END -->", data_script),
-    ])
+    ] + ed_blocks)
+    inject("services.html", ed_blocks)
     inject("about.html", [
         ("<!-- STAFF:PORTRAIT:START -->", "<!-- STAFF:PORTRAIT:END -->", staff_spot),
         ("<!-- STAFF:GRID:START -->", "<!-- STAFF:GRID:END -->", staff_grid),

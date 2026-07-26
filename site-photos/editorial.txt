@@ -1,0 +1,21 @@
+# Fixed page photos — the images built into index.html / services.html that are
+# NOT gallery project cards. Each one is pulled from a real project's photos so
+# it stays high-resolution and in sync with site-photos/.
+#
+# Format:
+#   slot | photo path under site-photos/projects/ | alt text
+#
+# The slot name matches a <!-- PHOTOS:EDITORIAL:<slot>:START --> marker in the
+# page. Rename a slot here and you must rename the marker too.
+#
+# To swap one of these photos: point the middle column at a different photo in
+# site-photos/projects/ and rebuild. Update the alt text to match what's shown.
+
+dealership-cafe | Commercial/Dealership/02 Volkswagen Dealership/02 Cafe seating beside the showroom.jpg | Custom dealership cafe and customer lounge with bar seating, built to brand spec
+kitchen-modern | Residential/Basement/01 Walkout Basement Finish/07 Black cabinet kitchenette with quartz island.jpg | Contemporary kitchenette with dark cabinetry, white quartz countertops, and a coffered ceiling
+commercial-shop | Commercial/Dealership/01 Audi Dealership/11 Service center work bays.jpg | Interior of a finished commercial service building with a long run of work bays
+
+# NOT listed here: assets/img/new-construction-* (barndominium) and
+# assets/img/pole-barn-* (red barn) on index.html / about.html. No
+# high-resolution originals exist for those two, so they stay as hand-placed
+# files in assets/img/ that the build does NOT regenerate. Don't delete them.
