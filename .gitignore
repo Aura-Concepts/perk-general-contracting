@@ -20,12 +20,3 @@ Desktop.ini
 # Logs / temp
 *.log
 npm-debug.log*
-
-# Raw photo archives — not needed to build or serve the site.
-# Working copies live in site-photos/; optimized versions in assets/img/.
-professional photos/
-gallery-images/
-headshots/
-
-# Logo source-transfer folder (copies live in assets/logo/)
-new logos/

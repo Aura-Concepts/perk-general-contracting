@@ -78,7 +78,7 @@ Don't change/regenerate these endpoints without reason.
   **`main`** is the up-to-date integration branch.
 - **Deploys via Cloudflare Workers static assets.** `wrangler.toml` points
   `[assets] directory = "."`; `.assetsignore` keeps source (`site-photos/`,
-  `assets/original/`, `*.md`, tooling) out of the live site. Cloudflare Git
+  `*.md`, tooling) out of the live site. Cloudflare Git
   integration runs `npx wrangler deploy` on push; non-prod branch builds are
   enabled (feature branches get preview URLs).
 - Commit style: subject + body, `Co-Authored-By: Claude Opus 4.8`. Branch,
@@ -87,9 +87,12 @@ Don't change/regenerate these endpoints without reason.
   assuming — don't hardcode branch state here, it goes stale.
 
 ## Known issues (verify current state before acting — this list can go stale)
-1. Home hero alt text may still be auto-derived from the filename (e.g. a raw
-   `PERK_FacebookCoverImage_851x3154`-style string). If so, rename the file in
-   `site-photos/hero/` to something descriptive and rebuild.
+1. A handful of images at the TOP LEVEL of `assets/img/` (`coffee-bar-*`,
+   `new-construction-*`, `kitchen-modern-*`, `outbuilding-*`, `pole-barn-*`)
+   are hand-placed editorial images referenced by `index/services/about.html`
+   — the build does NOT regenerate them. If `assets/` gets wiped, restore
+   them with `git restore`. (Hero alt text was fixed by renaming the file in
+   `site-photos/hero/` — keep hero filenames descriptive.)
 2. Google review link on `reviews.html` may still be a placeholder — swap in
    the real `g.page/r/…` URL if so.
 3. `.assetsignore` may not yet exclude `content/` — `content/reviews.txt` is

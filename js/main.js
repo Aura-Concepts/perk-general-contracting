@@ -57,16 +57,19 @@
   var yr = document.getElementById("year");
   if (yr) yr.textContent = new Date().getFullYear();
 
-  /* ---------------------------- gallery: projects, filters, modal, before/after */
+  /* ---------------------------- projects: modal + before/after (any page with
+     a #projects-data island + .pmodal), plus gallery filters where present */
   var pgrid = document.querySelector(".proj-grid");
-  if (pgrid) {
+  var pmodalEl = document.querySelector(".pmodal");
+  var pdata = document.getElementById("projects-data");
+  if (pmodalEl && pdata) {
     var projects = {};
     try {
-      JSON.parse(document.getElementById("projects-data").textContent)
+      JSON.parse(pdata.textContent)
         .forEach(function (p) { projects[p.id] = p; });
     } catch (e) { /* no data */ }
 
-    var cards = Array.prototype.slice.call(pgrid.querySelectorAll(".proj-card"));
+    var cards = pgrid ? Array.prototype.slice.call(pgrid.querySelectorAll(".proj-card")) : [];
     var filterBtns = document.querySelectorAll(".filters button");
 
     var applyFilter = function (btn) {
@@ -136,7 +139,7 @@
     });
 
     /* ---------- project modal ---------- */
-    var pmodal = document.querySelector(".pmodal");
+    var pmodal = pmodalEl;
     var pEye = pmodal.querySelector(".pmodal__eyebrow"),
         pTitle = pmodal.querySelector(".pmodal__title"),
         pDesc = pmodal.querySelector(".pmodal__desc"),
@@ -197,8 +200,19 @@
       if (e.key === "Escape" && pmodal.classList.contains("is-open") && !lb.classList.contains("is-open")) closeProject();
     });
 
+    /* featured tiles (home page): open the project modal in place — the
+       gallery.html?project= link still works without JS and in new tabs */
+    document.querySelectorAll('a[href*="gallery.html?project="]').forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        var id = null;
+        try { id = new URL(a.href, window.location.href).searchParams.get("project"); } catch (err) {}
+        if (id && projects[id]) { e.preventDefault(); openProject(id); }
+      });
+    });
+
     /* deep link: gallery.html?project=<id> opens that project (from home tiles) */
-    var wantProject = new URLSearchParams(window.location.search).get("project");
+    var wantProject = pgrid && new URLSearchParams(window.location.search).get("project");
     if (wantProject && projects[wantProject]) {
       var pcard = pgrid.querySelector('.proj-card[data-id="' + wantProject.replace(/[^a-z0-9\-]/gi, "") + '"]');
       if (pcard) {

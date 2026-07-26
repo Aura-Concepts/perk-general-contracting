@@ -238,10 +238,14 @@ def build_featured(projects):
         cov = p["photos"][0] if p["photos"] else None
         if not cov: continue
         d = p["dir"]; ws = cov["w"]; ar = cov["ar"]
-        thumb = pick(ws, 640); small = pick(ws, 400)
-        wset = [small] + ([thumb] if thumb != small else [])
         cls = layout.get(i, ""); class_attr = f' class="{cls}"' if cls else ""
-        sizes = "(max-width:900px) 100vw, 50vw" if cls else "(max-width:900px) 50vw, 25vw"
+        # spanning tiles render ~2 columns wide — include the larger renditions
+        # so they stay sharp on high-DPI screens
+        targets = (400, 640, 900, 1400) if cls else (400, 640, 900)
+        wset = sorted({pick(ws, t) for t in targets})
+        thumb = pick(ws, 900 if cls else 640)
+        sizes = ("(max-width:900px) 100vw, (max-width:1240px) 50vw, 580px" if cls
+                 else "(max-width:900px) 50vw, (max-width:1240px) 25vw, 280px")
         html.append(
 f'''          <a href="gallery.html?project={p['id']}"{class_attr}>
             <picture>
@@ -482,6 +486,7 @@ def main():
         ("<!-- PHOTOS:FEATURED:START -->", "<!-- PHOTOS:FEATURED:END -->", feat_html),
         ("<!-- PHOTOS:HERO:START -->", "<!-- PHOTOS:HERO:END -->", hero_html),
         ("<!-- REVIEWS:HOME:START -->", "<!-- REVIEWS:HOME:END -->", rev_home),
+        ("<!-- PHOTOS:DATA:START -->", "<!-- PHOTOS:DATA:END -->", data_script),
     ])
     inject("about.html", [
         ("<!-- STAFF:PORTRAIT:START -->", "<!-- STAFF:PORTRAIT:END -->", staff_spot),
