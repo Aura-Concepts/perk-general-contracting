@@ -9,7 +9,6 @@ rebuild.command
 
 # Docs / notes
 *.md
-SITE-INVENTORY.md
 UPDATING-PHOTOS.md
 
 # Repo / config plumbing
