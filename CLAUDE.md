@@ -43,6 +43,12 @@ and injected into the HTML between `<!-- PHOTOS:*:START/END -->` markers.
   `site-photos/featured.txt` (`Project name | Short caption`, max 6). Tiles reuse
   each project's cover and link to `gallery.html?project=<id>`.
 - **`build_hero`** (home banner) — one image from `site-photos/hero/`.
+- **`build_editorial`** → the fixed photos on index/services that aren't gallery
+  cards. `site-photos/editorial.txt` maps `slot | project photo | alt text`;
+  output goes to `assets/img/editorial/` and is injected at
+  `<!-- PHOTOS:EDITORIAL:<slot>:START/END -->`. Slots today: `dealership-cafe`
+  (home "Built to brand standards"), `kitchen-modern` + `commercial-shop`
+  (services). Swap a photo by re-pointing the middle column and rebuilding.
 - **`build_staff`** (About page) — `site-photos/staff.txt` (blocks of
   `Name | Title` + description) + one headshot per person in `site-photos/staff/`
   (matched by name in the file name). First person = owner spotlight portrait
@@ -78,7 +84,7 @@ Don't change/regenerate these endpoints without reason.
   **`main`** is the up-to-date integration branch.
 - **Deploys via Cloudflare Workers static assets.** `wrangler.toml` points
   `[assets] directory = "."`; `.assetsignore` keeps source (`site-photos/`,
-  `assets/original/`, `*.md`, tooling) out of the live site. Cloudflare Git
+  `*.md`, tooling) out of the live site. Cloudflare Git
   integration runs `npx wrangler deploy` on push; non-prod branch builds are
   enabled (feature branches get preview URLs).
 - Commit style: subject + body, `Co-Authored-By: Claude Opus 4.8`. Branch,
@@ -87,9 +93,13 @@ Don't change/regenerate these endpoints without reason.
   assuming — don't hardcode branch state here, it goes stale.
 
 ## Known issues (verify current state before acting — this list can go stale)
-1. Home hero alt text may still be auto-derived from the filename (e.g. a raw
-   `PERK_FacebookCoverImage_851x3154`-style string). If so, rename the file in
-   `site-photos/hero/` to something descriptive and rebuild.
+1. Two hand-placed images remain at the TOP LEVEL of `assets/img/`:
+   `new-construction-*` (barndominium, on index) and `pole-barn-*` (red barn,
+   on about). No high-res originals survive for either, so the build does NOT
+   regenerate them — if `assets/` gets wiped, restore them with `git restore`.
+   Everything else that used to live there is now built by `build_editorial`
+   from `site-photos/editorial.txt`. (Hero alt text was fixed by renaming the
+   file in `site-photos/hero/` — keep hero filenames descriptive.)
 2. Google review link on `reviews.html` may still be a placeholder — swap in
    the real `g.page/r/…` URL if so.
 3. `.assetsignore` may not yet exclude `content/` — `content/reviews.txt` is

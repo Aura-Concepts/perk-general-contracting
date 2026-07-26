@@ -4,8 +4,8 @@
 # (If you leave off "| caption", the project's title is used.)
 
 Audi Dealership | Audi Showroom
-Modern Kitchen Remodel | Modern Kitchen
-Stone Fireplace Living Room | Stone Fireplace
-Commercial Outbuilding | Before & After
-Custom Deck | Custom Deck
+Walkout Basement Finish | Walkout Basement
+Utah Full-Home Renovation | Before & After Flip
 Volkswagen Dealership | VW Dealership
+Altoona Family Home | Altoona Family Home
+Event Venue | Rustic Event Venue
