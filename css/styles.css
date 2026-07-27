@@ -64,7 +64,10 @@ body {
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
-img, picture, svg, video { display: block; max-width: 100%; }
+img, svg, video { display: block; max-width: 100%; }
+/* picture must not generate a box: img children size against the real
+   container, so height:100% + object-fit:cover slots fill edge-to-edge */
+picture { display: contents; }
 img { height: auto; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; cursor: pointer; }
@@ -191,7 +194,6 @@ p { text-wrap: pretty; }
   .nav a::after { display: none; }
   .nav .btn { margin-top: .5rem; font-size: 1.05rem; --btn-bg: var(--accent-2); border-color: var(--accent-2); font-family: var(--font-body); }
   body.nav-open { overflow: hidden; }
-  .hero__scroll { display: none; }
 }
 
 /* ------------------------------------------------------------- page hero */
@@ -237,6 +239,8 @@ p { text-wrap: pretty; }
 .hero__scroll { position: absolute; bottom: 1.4rem; left: 50%; transform: translateX(-50%); font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.7); display: flex; flex-direction: column; align-items: center; gap: .5rem; }
 .hero__scroll::after { content: ""; width: 1px; height: 34px; background: linear-gradient(rgba(255,255,255,.7), transparent); animation: scrolldot 2s var(--ease) infinite; }
 @keyframes scrolldot { 0%{transform:scaleY(.2);transform-origin:top;opacity:0} 50%{transform:scaleY(1);opacity:1} 100%{transform:scaleY(.2);transform-origin:bottom;opacity:0} }
+/* must come after the .hero__scroll display:flex rule above to win the cascade */
+@media (max-width: 860px) { .hero__scroll { display: none; } }
 
 /* --------------------------------------------------------------- trust bar */
 .trustbar { background: var(--ink); color: var(--on-dark); border-top: 1px solid var(--line-dark); }
@@ -491,6 +495,8 @@ body.pmodal-open { overflow: hidden; }
 .team-card__body h3 { font-size: 1.25rem; }
 .team-card__role { font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); margin-top: .3rem; }
 .team-card__bio { font-size: .95rem; color: var(--text-soft); margin-top: .8rem; }
+/* bios vary a lot in length — two narrow columns get ragged, so stack instead */
+@media (max-width: 720px) { .team-grid { grid-template-columns: 1fr; } }
 
 .values { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,240px),1fr)); gap: 1.4rem; }
 .value { padding: 1.7rem; border-radius: var(--radius); background: var(--paper); border: 1px solid var(--line); transition: transform .4s var(--ease), box-shadow .4s var(--ease); }
