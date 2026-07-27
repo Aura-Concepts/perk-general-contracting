@@ -43,7 +43,15 @@ CATEGORIES = {
 }
 
 EXTS = (".jpg", ".jpeg", ".png", ".webp")
-PHOTO_WIDTHS    = [400, 640, 900, 1400]
+# Rungs chosen against measured slot widths, not round numbers. 500 and 750
+# fill gaps where the browser was jumping to an oversized file: the card at 1x
+# desktop wants 430 (was pulling 640) and the modal tile at 2x on a phone wants
+# 664 (was pulling 900). Both rungs REDUCE transfer.
+PHOTO_WIDTHS    = [400, 500, 640, 750, 900, 1400]
+# Before/after is the one slot that outgrows 1400: the stage is 917 CSS px, so
+# a 2x screen needs 1834. Only these images get the 1800 rung — generating it
+# for all ~105 project photos would be dead weight.
+BA_WIDTHS       = [400, 640, 750, 900, 1400, 1800]
 FEATURED_WIDTHS = [400, 640, 960, 1280]
 EDITORIAL_WIDTHS = [640, 960, 1280, 1600]
 HERO_WIDTHS     = [960, 1280, 1600, 1920, 2400]
@@ -149,21 +157,22 @@ def build_projects():
                 about = os.path.join(projdir, "about.txt")
                 desc = open(about).read().strip() if os.path.exists(about) else ""
 
-                def add(src):
+                def add(src, ladder=PHOTO_WIDTHS):
                     s = slugify(caption_from(src)) + "-" + uid(src)
-                    m = render(src, absd, s, PHOTO_WIDTHS)
+                    m = render(src, absd, s, ladder)
                     return {"s": s, "w": m["widths"], "ar": m["ar"], "alt": caption_from(src)}
 
                 photo_data = [add(p) for p in photos]
 
-                # before/after pairs
+                # before/after pairs — these fill a 917px stage, so they get the
+                # taller BA_WIDTHS ladder rather than the grid-sized one
                 ba = []
                 akeys = {ba_key(a): a for a in afters}
                 for b in befores:
                     a = akeys.get(ba_key(b))
                     if not a: continue
-                    bd = add(b); bd["alt"] = f"Before — {title}"
-                    ad = add(a); ad["alt"] = f"After — {title}"
+                    bd = add(b, BA_WIDTHS); bd["alt"] = f"Before — {title}"
+                    ad = add(a, BA_WIDTHS); ad["alt"] = f"After — {title}"
                     ba.append({"before": bd, "after": ad})
 
                 cover = photo_data[0] if photo_data else (
@@ -182,11 +191,14 @@ def build_projects():
                 # generated and used by the modal, but never offered here, which
                 # is what made the cards look soft on retina displays.
                 thumb = pick(cw, 640)
-                wset = sorted({pick(cw, t) for t in (400, 640, 900)})
+                # 500 = 1x desktop (430), 750 = 2x mobile (706), 900 = 2x
+                # desktop (850). Offering all of them lets the browser land
+                # close instead of rounding up a whole rung.
+                wset = sorted({pick(cw, t) for t in (400, 500, 640, 750, 900)})
                 # Measured against the real grid, not guessed: the card is 91vw
                 # at 390, 45vw at 768, 449px at ~1000 (2 cols) and 425px at 1440
                 # (3 cols). The old flat "380px" under-declared the desktop case.
-                sizes = ("(max-width:560px) 100vw, (max-width:900px) 50vw, "
+                sizes = ("(max-width:560px) 92vw, (max-width:900px) 50vw, "
                          "(max-width:1240px) 47vw, 430px")
                 ba_tag = '<span class="proj-card__flag">Before &amp; After</span>' if ba else ''
                 sub = subtype + (f' · {len(photo_data)} photos' if len(photo_data) > 1 else '')
