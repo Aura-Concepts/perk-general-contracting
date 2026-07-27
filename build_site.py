@@ -177,9 +177,17 @@ def build_projects():
 
                 # ---- card (cover rendered server-side) ----
                 cw = cover["w"]; car = cover["ar"]
-                thumb = pick(cw, 640); small = pick(cw, 400)
-                wset = [small] + ([thumb] if thumb != small else [])
-                sizes = "(max-width:560px) 100vw, (max-width:900px) 50vw, 380px"
+                # The card is ~425 CSS px on desktop, so a 2x screen needs ~850.
+                # The srcset used to stop at 640 — the 900 rendition was being
+                # generated and used by the modal, but never offered here, which
+                # is what made the cards look soft on retina displays.
+                thumb = pick(cw, 640)
+                wset = sorted({pick(cw, t) for t in (400, 640, 900)})
+                # Measured against the real grid, not guessed: the card is 91vw
+                # at 390, 45vw at 768, 449px at ~1000 (2 cols) and 425px at 1440
+                # (3 cols). The old flat "380px" under-declared the desktop case.
+                sizes = ("(max-width:560px) 100vw, (max-width:900px) 50vw, "
+                         "(max-width:1240px) 47vw, 430px")
                 ba_tag = '<span class="proj-card__flag">Before &amp; After</span>' if ba else ''
                 sub = subtype + (f' · {len(photo_data)} photos' if len(photo_data) > 1 else '')
                 cards.append(
@@ -245,8 +253,9 @@ def build_featured(projects):
         targets = (400, 640, 900, 1400) if cls else (400, 640, 900)
         wset = sorted({pick(ws, t) for t in targets})
         thumb = pick(ws, 900 if cls else 640)
-        sizes = ("(max-width:900px) 100vw, (max-width:1240px) 50vw, 580px" if cls
-                 else "(max-width:900px) 50vw, (max-width:1240px) 25vw, 280px")
+        # measured at 1440: spanning tile is 652px, plain tile 318px
+        sizes = ("(max-width:900px) 100vw, (max-width:1240px) 50vw, 660px" if cls
+                 else "(max-width:900px) 50vw, (max-width:1240px) 25vw, 320px")
         html.append(
 f'''          <a href="gallery.html?project={p['id']}"{class_attr}>
             <picture>
@@ -269,7 +278,9 @@ def build_editorial():
     txt = os.path.join(SRC, "editorial.txt")
     blocks = {}
     if not os.path.exists(txt): return blocks
-    sizes = "(max-width:800px) 90vw, 45vw"
+    # the split column is 498px at a 1440 viewport = ~35vw; the old 45vw
+    # over-declared and pulled a 960px file into a 498px box
+    sizes = "(max-width:800px) 90vw, 36vw"
     d = "assets/img/editorial"
     for line in open(txt):
         line = line.strip()

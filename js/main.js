@@ -179,8 +179,8 @@
         el.innerHTML =
           '<div class="ba__label">Before / After &middot; drag to compare</div>' +
           '<div class="ba" style="aspect-ratio:1 / ' + ar + '">' +
-            '<div class="ba__after">' + picture(p.dir, pair.after, "(max-width:1040px) 92vw, 900px", 900, "eager") + '</div>' +
-            '<div class="ba__before">' + picture(p.dir, pair.before, "(max-width:1040px) 92vw, 900px", 900, "eager") + '</div>' +
+            '<div class="ba__after">' + picture(p.dir, pair.after, "(max-width:1040px) 92vw, 920px", 900, "eager") + '</div>' +
+            '<div class="ba__before">' + picture(p.dir, pair.before, "(max-width:1040px) 92vw, 920px", 900, "eager") + '</div>' +
             '<div class="ba__handle">' + chevrons + '</div>' +
             '<span class="ba__tag ba__tag--before">Before</span>' +
             '<span class="ba__tag ba__tag--after">After</span>' +
@@ -196,7 +196,10 @@
       (p.photos || []).forEach(function (im, idx) {
         var b = document.createElement("button");
         b.type = "button"; b.setAttribute("aria-label", "Enlarge photo: " + im.alt);
-        b.innerHTML = picture(p.dir, im, "(max-width:700px) 45vw, 220px", 400, "lazy");
+        /* The grid falls to ONE column on a phone (min 220px + panel padding
+           won't fit two), so each tile is ~85vw there, not 45vw. Above 700px it
+           tops out near 320px (316 at a 768 viewport, 297 at 1440). */
+        b.innerHTML = picture(p.dir, im, "(max-width:700px) 85vw, 320px", 400, "lazy");
         b.addEventListener("click", function () { openLightbox(lightList, idx); });
         pGrid.appendChild(b);
       });
