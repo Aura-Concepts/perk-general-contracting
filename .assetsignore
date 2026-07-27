@@ -7,6 +7,10 @@ site-photos/
 build_site.py
 rebuild.command
 
+# Source copy for generated content — reviews.txt is baked into the HTML by
+# build_site.py, so the raw file doesn't need to ship
+content/
+
 # Docs / notes
 *.md
 UPDATING-PHOTOS.md
@@ -16,3 +20,8 @@ UPDATING-PHOTOS.md
 .gitignore
 .assetsignore
 wrangler.toml
+.claude/
+
+# macOS junk (only reachable on a local `wrangler deploy`; git ignores it)
+.DS_Store
+**/.DS_Store

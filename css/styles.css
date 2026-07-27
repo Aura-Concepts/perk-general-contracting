@@ -186,10 +186,14 @@ p { text-wrap: pretty; }
     position: fixed; inset: 0; z-index: 110;
     flex-direction: column; justify-content: center; gap: 1.6rem;
     background: var(--ink);
-    transform: translateX(100%); transition: transform .4s var(--ease);
+    /* visibility (not just transform) so the off-screen menu is out of the tab
+       order and the a11y tree while closed — it still animates, because
+       visibility flips at the end of the transition when hiding */
+    transform: translateX(100%); visibility: hidden;
+    transition: transform .4s var(--ease), visibility .4s var(--ease);
     padding: 2rem;
   }
-  .nav-open .nav { transform: translateX(0); }
+  .nav-open .nav { transform: translateX(0); visibility: visible; }
   .nav a { font-size: 1.5rem; font-family: var(--font-display); }
   .nav a::after { display: none; }
   .nav .btn { margin-top: .5rem; font-size: 1.05rem; --btn-bg: var(--accent-2); border-color: var(--accent-2); font-family: var(--font-body); }

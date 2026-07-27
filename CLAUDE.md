@@ -84,7 +84,7 @@ Don't change/regenerate these endpoints without reason.
   **`main`** is the up-to-date integration branch.
 - **Deploys via Cloudflare Workers static assets.** `wrangler.toml` points
   `[assets] directory = "."`; `.assetsignore` keeps source (`site-photos/`,
-  `*.md`, tooling) out of the live site. Cloudflare Git
+  `content/`, `*.md`, `.claude/`, tooling) out of the live site. Cloudflare Git
   integration runs `npx wrangler deploy` on push; non-prod branch builds are
   enabled (feature branches get preview URLs).
 - Commit style: subject + body, `Co-Authored-By: Claude Opus 4.8`. Branch,
@@ -100,13 +100,16 @@ Don't change/regenerate these endpoints without reason.
    Everything else that used to live there is now built by `build_editorial`
    from `site-photos/editorial.txt`. (Hero alt text was fixed by renaming the
    file in `site-photos/hero/` — keep hero filenames descriptive.)
-2. Google review link on `reviews.html` may still be a placeholder — swap in
-   the real `g.page/r/…` URL if so.
-3. `.assetsignore` may not yet exclude `content/` — `content/reviews.txt` is
-   built into the HTML, so the raw file needn't ship.
-4. Hours + street address were never published on the old site — **not
+2. Google review link on `reviews.html` is **still a placeholder** — it points
+   at a Google *search* for the business, not the review dialog. Needs the real
+   `g.page/r/…` link from Google Business Profile → "Ask for reviews". Only the
+   owner can generate it; don't invent one.
+3. Hours + street address were never published on the old site — **not
    fabricated**; contact page says "by appointment." Only add if the owner
    provides them.
+4. `reviews.html` is reachable from the footer and two home-page links, but is
+   **not in the primary nav**. Deliberate so far — raise it with the owner
+   rather than silently changing the nav.
 
 ## Business facts to preserve (verbatim)
 - **Perk General Contracting**, owner **Nikolaus Perkovich**, **est. 2014**, Des Moines, IA.
@@ -116,9 +119,47 @@ Don't change/regenerate these endpoints without reason.
 - Canonical domain in metadata/sitemap: `https://www.perkgc.com`.
 
 ## Gotchas when previewing in-browser
-- Screenshots anchor to scroll-0 on pages with the fixed hero. To QA lower
-  sections: resize to a **tall viewport**, or `translateY(-Npx)` the `<main>`/
-  footer, and force `.reveal` elements visible via JS.
-- The browser **caches `main.js`/`styles.css`** — hard-reload
-  (`location.reload(true)`) or append `?v=N` after editing them, or you'll test
-  stale code.
+**Why screenshots keep coming back blank/white.** The Browser pane runs
+**backgrounded** — `document.visibilityState === "hidden"` for the whole
+session. A hidden renderer doesn't paint, doesn't run rAF, and doesn't tick CSS
+transitions. Everything below follows from that, so don't chase it as a site
+bug. Check it any time output looks wrong: `javascript_tool` →
+`document.visibilityState`.
+
+1. **The pane can open at a 0×0 viewport.** `resize_window` with the `desktop`
+   preset resolves to "native size" = 0×0. Always pass explicit
+   `{width, height}` (e.g. 1280×900, or 390×844 for phone). At width 0 every
+   `sizes="100vw"` image picks the smallest srcset candidate, `naturalWidth`
+   reads 0 (looks like a broken image), and every layout measurement is junk.
+2. **`resize_window` is the repaint trigger.** A screenshot only shows what was
+   painted at load. To capture anything else: change the viewport (even by 1px)
+   *immediately before* `computer{action:"screenshot"}`. Waiting longer does
+   **not** help — a hidden pane never repaints on its own.
+3. **You cannot screenshot a scrolled page.** Scroll, then screenshot, returns
+   white every time. To QA lower sections, use a **tall viewport**
+   (e.g. 1280×2600) so the section is inside the initial paint at scroll 0.
+4. **`html { scroll-behavior: smooth }` breaks programmatic scrolling here** —
+   smooth scroll is rAF-driven, so `window.scrollTo(0, y)` silently stays at 0.
+   Use `window.scrollTo({top: y, behavior: "instant"})`, or set
+   `document.documentElement.style.scrollBehavior = "auto"` first.
+5. **`computer` actions (scroll/click) time out after 30s** with "Browser pane
+   is currently hidden," and can wedge the pane until the next `navigate`.
+   Drive the page with `javascript_tool` (`el.click()`, synthetic
+   `KeyboardEvent`s) instead — that works reliably.
+6. **Don't trust `getComputedStyle` after a JS-driven state change** — the
+   hidden renderer defers style invalidation, so it hands back stale values and
+   you'll "find" bugs that aren't there. Two real examples from this repo, both
+   of which turned out to be fine:
+   - open mobile menu still reporting `visibility: hidden; transform:
+     translateX(100%)` (frozen transition) → inject
+     `*{transition:none !important}` before reading;
+   - `.rating input:checked ~ label` stars still reading `--line` grey after
+     `.click()` (skipped sibling invalidation) → force a recalc with
+     `el.style.display='none'; void el.offsetHeight; el.style.display=''`.
+   `element.matches(selector)` runs the selector engine fresh and stays
+   trustworthy — use it to sanity-check before believing a computed value.
+7. `.reveal` starts at `opacity: 0`. Force `.is-visible` on all of them via JS
+   before judging a screenshot of anything below the fold.
+8. The browser **caches `main.js`/`styles.css`** — bump the `?v=N` on the
+   `<link>`/`<script>` in all six HTML files after editing them (they're
+   currently `styles.css?v=4`, `main.js?v=3`), or you'll test stale code.

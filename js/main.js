@@ -6,12 +6,34 @@
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------------------------------------------------- mobile nav toggle */
+  /* Keep Tab inside an open overlay (mobile nav, project modal, lightbox) so
+     keyboard users can't wander onto the page hidden behind it. */
+  var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+  var trapFocus = function (container, e) {
+    if (e.key !== "Tab") return;
+    var items = Array.prototype.filter.call(
+      container.querySelectorAll(FOCUSABLE),
+      function (el) { return el.offsetWidth || el.offsetHeight || el.getClientRects().length; }
+    );
+    if (!items.length) return;
+    var first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    else if (!container.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+  };
+
   var toggle = document.querySelector(".nav-toggle");
   var nav = document.querySelector(".nav");
   if (toggle && nav) {
+    var closeNav = function () {
+      document.body.classList.remove("nav-open");
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.focus();
+    };
     toggle.addEventListener("click", function () {
       var open = document.body.classList.toggle("nav-open");
       toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) nav.querySelector("a").focus();
     });
     nav.addEventListener("click", function (e) {
       if (e.target.closest("a")) {
@@ -20,10 +42,9 @@
       }
     });
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && document.body.classList.contains("nav-open")) {
-        document.body.classList.remove("nav-open");
-        toggle.setAttribute("aria-expanded", "false");
-      }
+      if (!document.body.classList.contains("nav-open")) return;
+      if (e.key === "Escape") closeNav();
+      else trapFocus(nav, e);
     });
   }
 
@@ -63,7 +84,9 @@
   var pmodalEl = document.querySelector(".pmodal");
   var pdata = document.getElementById("projects-data");
   if (pmodalEl && pdata) {
-    var projects = {};
+    /* null-prototype so a bogus ?project=constructor can't resolve to an
+       inherited property and open an empty modal */
+    var projects = Object.create(null);
     try {
       JSON.parse(pdata.textContent)
         .forEach(function (p) { projects[p.id] = p; });
@@ -131,12 +154,6 @@
     lb.querySelector(".lb-next").addEventListener("click", function () { lbShow(lbIndex + 1); });
     lb.querySelector(".lb-prev").addEventListener("click", function () { lbShow(lbIndex - 1); });
     lb.addEventListener("click", function (e) { if (e.target === lb) closeLightbox(); });
-    document.addEventListener("keydown", function (e) {
-      if (!lb.classList.contains("is-open")) return;
-      if (e.key === "Escape") closeLightbox();
-      else if (e.key === "ArrowRight") lbShow(lbIndex + 1);
-      else if (e.key === "ArrowLeft") lbShow(lbIndex - 1);
-    });
 
     /* ---------- project modal ---------- */
     var pmodal = pmodalEl;
@@ -162,8 +179,8 @@
         el.innerHTML =
           '<div class="ba__label">Before / After &middot; drag to compare</div>' +
           '<div class="ba" style="aspect-ratio:1 / ' + ar + '">' +
-            '<div class="ba__after">' + picture(p.dir, pair.after, "(max-width:1040px) 92vw, 900px", 900, "eager") + '</div>' +
-            '<div class="ba__before">' + picture(p.dir, pair.before, "(max-width:1040px) 92vw, 900px", 900, "eager") + '</div>' +
+            '<div class="ba__after">' + picture(p.dir, pair.after, "(max-width:1040px) 92vw, 920px", 900, "eager") + '</div>' +
+            '<div class="ba__before">' + picture(p.dir, pair.before, "(max-width:1040px) 92vw, 920px", 900, "eager") + '</div>' +
             '<div class="ba__handle">' + chevrons + '</div>' +
             '<span class="ba__tag ba__tag--before">Before</span>' +
             '<span class="ba__tag ba__tag--after">After</span>' +
@@ -179,7 +196,10 @@
       (p.photos || []).forEach(function (im, idx) {
         var b = document.createElement("button");
         b.type = "button"; b.setAttribute("aria-label", "Enlarge photo: " + im.alt);
-        b.innerHTML = picture(p.dir, im, "(max-width:700px) 45vw, 220px", 400, "lazy");
+        /* The grid falls to ONE column on a phone (min 220px + panel padding
+           won't fit two), so each tile is ~85vw there, not 45vw. Above 700px it
+           tops out near 320px (316 at a 768 viewport, 297 at 1440). */
+        b.innerHTML = picture(p.dir, im, "(max-width:700px) 85vw, 320px", 400, "lazy");
         b.addEventListener("click", function () { openLightbox(lightList, idx); });
         pGrid.appendChild(b);
       });
@@ -196,8 +216,20 @@
     };
     cards.forEach(function (c) { c.addEventListener("click", function () { openProject(c.getAttribute("data-id")); }); });
     pmodal.querySelectorAll("[data-pclose]").forEach(function (el) { el.addEventListener("click", closeProject); });
+
+    /* One handler for both overlays. Keeping these separate meant a single Esc
+       inside the lightbox closed the lightbox *and* the project modal behind
+       it, because the second listener saw the lightbox as already closed. */
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && pmodal.classList.contains("is-open") && !lb.classList.contains("is-open")) closeProject();
+      if (lb.classList.contains("is-open")) {
+        if (e.key === "Escape") closeLightbox();
+        else if (e.key === "ArrowRight") lbShow(lbIndex + 1);
+        else if (e.key === "ArrowLeft") lbShow(lbIndex - 1);
+        else trapFocus(lb, e);
+      } else if (pmodal.classList.contains("is-open")) {
+        if (e.key === "Escape") closeProject();
+        else trapFocus(pmodal.querySelector(".pmodal__panel"), e);
+      }
     });
 
     /* featured tiles (home page): open the project modal in place — the
