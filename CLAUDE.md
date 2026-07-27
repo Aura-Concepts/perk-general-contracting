@@ -93,13 +93,15 @@ Don't change/regenerate these endpoints without reason.
   assuming — don't hardcode branch state here, it goes stale.
 
 ## Known issues (verify current state before acting — this list can go stale)
-1. Two hand-placed images remain at the TOP LEVEL of `assets/img/`:
-   `new-construction-*` (barndominium, on index) and `pole-barn-*` (red barn,
-   on about). No high-res originals survive for either, so the build does NOT
-   regenerate them — if `assets/` gets wiped, restore them with `git restore`.
-   Everything else that used to live there is now built by `build_editorial`
-   from `site-photos/editorial.txt`. (Hero alt text was fixed by renaming the
-   file in `site-photos/hero/` — keep hero filenames descriptive.)
+1. **Nothing is hand-placed any more.** The barndominium and red-barn photos
+   used to sit at the top level of `assets/img/` outside the build; their
+   camera originals are lost, so the largest surviving web rendition was
+   promoted to a source in `site-photos/editorial/` and they're now normal
+   `build_editorial` slots. That caps them at 1280px / 960px — if a real
+   original ever turns up, drop it in under the same filename and rebuild.
+   `editorial.txt` accepts a path relative to `site-photos/` as well as the
+   usual one relative to `site-photos/projects/`. (Hero alt text comes from the
+   filename in `site-photos/hero/` — keep it descriptive.)
 2. Google review link on `reviews.html` is **still a placeholder** — it points
    at a Google *search* for the business, not the review dialog. Needs the real
    `g.page/r/…` link from Google Business Profile → "Ask for reviews". Only the

@@ -15,7 +15,10 @@ dealership-cafe | Commercial/Dealership/02 Volkswagen Dealership/02 Cafe seating
 kitchen-modern | Residential/Basement/01 Walkout Basement Finish/07 Black cabinet kitchenette with quartz island.jpg | Contemporary kitchenette with dark cabinetry, white quartz countertops, and a coffered ceiling
 commercial-shop | Commercial/Dealership/01 Audi Dealership/11 Service center work bays.jpg | Interior of a finished commercial service building with a long run of work bays
 
-# NOT listed here: assets/img/new-construction-* (barndominium) and
-# assets/img/pole-barn-* (red barn) on index.html / about.html. No
-# high-resolution originals exist for those two, so they stay as hand-placed
-# files in assets/img/ that the build does NOT regenerate. Don't delete them.
+# These two aren't project photos, so they live in site-photos/editorial/ and
+# are given as a path relative to site-photos/ instead of site-photos/projects/.
+# Their camera originals are lost — the source is the largest surviving web
+# rendition, which caps them at 1280px and 960px. The build owns them now, so
+# they still get sharpening, WebP and the normal size ladder.
+new-construction | editorial/Newly constructed modern barndominium in rural Iowa.jpg | Newly constructed modern barndominium with metal roofing and landscaped grounds in rural Iowa
+pole-barn | editorial/Classic red gambrel-roof barn in rural Iowa.jpg | Classic red gambrel-roof barn built in rural Iowa, reflecting the company's pole-barn roots

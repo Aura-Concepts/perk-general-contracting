@@ -337,6 +337,10 @@ def build_editorial():
         slot, rel, alt = parts[0], parts[1], parts[2]
         src = os.path.join(SRC, "projects", rel)
         if not os.path.isfile(src):
+            # also allow a path relative to site-photos/ itself, for stills that
+            # aren't part of any project (see site-photos/editorial/)
+            src = os.path.join(SRC, rel)
+        if not os.path.isfile(src):
             print(f"  ! editorial: no such photo for '{slot}': {rel}")
             continue
         m = render(src, outdir, slot, EDITORIAL_WIDTHS)
@@ -357,7 +361,10 @@ def build_hero():
     src = srcs[0]; slug = slugify(caption_from(src)) + "-" + uid(src)
     m = render(src, outdir, slug, HERO_WIDTHS); ws = m["widths"]; cap = caption_from(src)
     base = pick(ws, 1600)
+    # og-cover is a crop-and-downscale, so it needs the same output sharpening
+    # as everything render() produces — it just doesn't go through render().
     og = ImageOps.fit(ImageOps.exif_transpose(Image.open(src)).convert("RGB"), (1200, 630), Image.LANCZOS)
+    og = og.filter(ImageFilter.UnsharpMask(radius=0.8, percent=80, threshold=2))
     og.save(os.path.join(IMG, "og-cover.jpg"), "JPEG", quality=84, optimize=True)
     return (
 f'''        <picture>
@@ -587,7 +594,7 @@ def main():
     inject("about.html", [
         ("<!-- STAFF:PORTRAIT:START -->", "<!-- STAFF:PORTRAIT:END -->", staff_spot),
         ("<!-- STAFF:GRID:START -->", "<!-- STAFF:GRID:END -->", staff_grid),
-    ])
+    ] + ed_blocks)
     inject("reviews.html", [
         ("<!-- REVIEWS:ALL:START -->", "<!-- REVIEWS:ALL:END -->", rev_all),
     ])
