@@ -29,7 +29,7 @@ You do NOT need to touch any code to manage photos. Edit the folders in
 Then run:  python3 build_site.py
 """
 import os, re, json, shutil, hashlib
-from PIL import Image, ImageOps, ImageDraw
+from PIL import Image, ImageOps, ImageDraw, ImageFilter
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC  = os.path.join(ROOT, "site-photos")
@@ -52,6 +52,12 @@ PHOTO_WIDTHS    = [400, 500, 640, 750, 900, 1400]
 # a 2x screen needs 1834. Only these images get the 1800 rung — generating it
 # for all ~105 project photos would be dead weight.
 BA_WIDTHS       = [400, 640, 750, 900, 1400, 1800]
+# The lightbox shows one photo nearly full-screen — it displays ~1107 CSS px on
+# a 1440x900 laptop, so a 2x screen needs ~2215. It was being handed the 1400
+# rendition (63% coverage), the worst-served slot on the site. This rung exists
+# only for it, and only as WebP: the lightbox is JS-driven so it can ask for
+# WebP directly, and anything that can't decode WebP falls back to the 1400 JPEG.
+LIGHTBOX_WIDTH  = 2200
 FEATURED_WIDTHS = [400, 640, 960, 1280]
 EDITORIAL_WIDTHS = [640, 960, 1280, 1600]
 HERO_WIDTHS     = [960, 1280, 1600, 1920, 2400]
@@ -88,7 +94,24 @@ def list_dirs(folder):
            if os.path.isdir(os.path.join(folder, d)) and not d.startswith('.')]
     return sorted(out, key=natural_key)
 
-def render(src, outdir, slug, ladder, q_webp=80, q_jpg=82):
+def resample(im, w, ar, sw):
+    """Downscale one rendition, then sharpen it.
+
+    Every resample costs acutance — that softness is why a naive pipeline looks
+    mushy next to Facebook/Instagram/Squarespace, which all sharpen the resized
+    output. threshold=2 keeps the filter off flat surfaces, which matters here:
+    this portfolio is mostly white walls, and sharpening sensor noise in them
+    would look worse than the softness we're fixing.
+
+    Skipped when w == sw — a 1:1 "resize" loses nothing, so sharpening it would
+    just be over-sharpening.
+    """
+    rim = im.resize((w, round(w * ar)), Image.LANCZOS)
+    if w < sw:
+        rim = rim.filter(ImageFilter.UnsharpMask(radius=0.8, percent=80, threshold=2))
+    return rim
+
+def render(src, outdir, slug, ladder, q_webp=80, q_jpg=82, webp_only=()):
     os.makedirs(outdir, exist_ok=True)
     im = ImageOps.exif_transpose(Image.open(src)).convert("RGB")
     sw, sh = im.size
@@ -99,10 +122,16 @@ def render(src, outdir, slug, ladder, q_webp=80, q_jpg=82):
         widths.append(native)
     widths = sorted(set(widths))
     for w in widths:
-        rim = im.resize((w, round(w * ar)), Image.LANCZOS)
+        rim = resample(im, w, ar, sw)
         rim.save(os.path.join(outdir, f"{slug}-{w}.webp"), "WEBP", quality=q_webp, method=6)
         rim.save(os.path.join(outdir, f"{slug}-{w}.jpg"),  "JPEG", quality=q_jpg, optimize=True, progressive=True)
-    return {"widths": widths, "ar": round(ar, 4), "w": sw, "h": sh}
+    # WebP-only renditions (the lightbox rung). Skipped when the source isn't
+    # big enough to reach them, so nothing is ever upscaled.
+    extra = sorted({w for w in webp_only if w < sw and w not in widths})
+    for w in extra:
+        resample(im, w, ar, sw).save(
+            os.path.join(outdir, f"{slug}-{w}.webp"), "WEBP", quality=q_webp, method=6)
+    return {"widths": widths, "extra": extra, "ar": round(ar, 4), "w": sw, "h": sh}
 
 def pick(widths, target):
     c = [w for w in widths if w >= target]
@@ -157,12 +186,18 @@ def build_projects():
                 about = os.path.join(projdir, "about.txt")
                 desc = open(about).read().strip() if os.path.exists(about) else ""
 
-                def add(src, ladder=PHOTO_WIDTHS):
+                def add(src, ladder=PHOTO_WIDTHS, webp_only=()):
                     s = slugify(caption_from(src)) + "-" + uid(src)
-                    m = render(src, absd, s, ladder)
-                    return {"s": s, "w": m["widths"], "ar": m["ar"], "alt": caption_from(src)}
+                    m = render(src, absd, s, ladder, webp_only=webp_only)
+                    d = {"s": s, "w": m["widths"], "ar": m["ar"], "alt": caption_from(src)}
+                    # widest WebP the lightbox may reach, when one was made
+                    if m["extra"]:
+                        d["lbw"] = m["extra"][-1]
+                    return d
 
-                photo_data = [add(p) for p in photos]
+                # only these reach the lightbox (lightList is built from photos),
+                # so only these get the big WebP-only rung
+                photo_data = [add(p, webp_only=(LIGHTBOX_WIDTH,)) for p in photos]
 
                 # before/after pairs — these fill a 917px stage, so they get the
                 # taller BA_WIDTHS ladder rather than the grid-sized one
@@ -302,6 +337,10 @@ def build_editorial():
         slot, rel, alt = parts[0], parts[1], parts[2]
         src = os.path.join(SRC, "projects", rel)
         if not os.path.isfile(src):
+            # also allow a path relative to site-photos/ itself, for stills that
+            # aren't part of any project (see site-photos/editorial/)
+            src = os.path.join(SRC, rel)
+        if not os.path.isfile(src):
             print(f"  ! editorial: no such photo for '{slot}': {rel}")
             continue
         m = render(src, outdir, slot, EDITORIAL_WIDTHS)
@@ -322,7 +361,10 @@ def build_hero():
     src = srcs[0]; slug = slugify(caption_from(src)) + "-" + uid(src)
     m = render(src, outdir, slug, HERO_WIDTHS); ws = m["widths"]; cap = caption_from(src)
     base = pick(ws, 1600)
+    # og-cover is a crop-and-downscale, so it needs the same output sharpening
+    # as everything render() produces — it just doesn't go through render().
     og = ImageOps.fit(ImageOps.exif_transpose(Image.open(src)).convert("RGB"), (1200, 630), Image.LANCZOS)
+    og = og.filter(ImageFilter.UnsharpMask(radius=0.8, percent=80, threshold=2))
     og.save(os.path.join(IMG, "og-cover.jpg"), "JPEG", quality=84, optimize=True)
     return (
 f'''        <picture>
@@ -552,7 +594,7 @@ def main():
     inject("about.html", [
         ("<!-- STAFF:PORTRAIT:START -->", "<!-- STAFF:PORTRAIT:END -->", staff_spot),
         ("<!-- STAFF:GRID:START -->", "<!-- STAFF:GRID:END -->", staff_grid),
-    ])
+    ] + ed_blocks)
     inject("reviews.html", [
         ("<!-- REVIEWS:ALL:START -->", "<!-- REVIEWS:ALL:END -->", rev_all),
     ])

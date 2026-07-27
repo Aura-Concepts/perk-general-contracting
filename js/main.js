@@ -121,7 +121,23 @@
         '<img src="' + dir + "/" + im.s + "-" + base + '.jpg" sizes="' + sizes + '" srcset="' + jpg +
         '" alt="' + attr(im.alt) + '" loading="' + (loading || "lazy") + '" decoding="async"></picture>';
     };
-    var fullUrl = function (dir, im) { return dir + "/" + im.s + "-" + im.w[im.w.length - 1] + ".jpg"; };
+    /* The lightbox is height-constrained (max-height: 82vh) at least as often as
+       it is width-constrained, and `sizes` can only express width — so choose the
+       rendition here, where both the viewport and the photo's aspect ratio are
+       known. It used to hardcode the largest JPEG, which meant ~63% coverage on a
+       2x laptop: the worst-served slot on the site, in the one place someone has
+       deliberately asked to look closely. */
+    var lbUrl = function (dir, im) {
+      var pad = Math.min(Math.max(window.innerWidth * 0.04, 16), 48);  // .lightbox padding
+      var availW = window.innerWidth - pad * 2;
+      var availH = window.innerHeight * 0.82;                          // .lightbox img max-height
+      var cssW = Math.min(availW, availH / (im.ar || 0.667));
+      var need = Math.round(cssW * (window.devicePixelRatio || 1));
+      var ws = im.lbw ? im.w.concat([im.lbw]) : im.w;                  // lbw is WebP-only
+      return dir + "/" + im.s + "-" + pickW(ws, need) + ".webp";
+    };
+    /* anything that can't decode WebP drops back to the largest JPEG */
+    var lbFallback = function (dir, im) { return dir + "/" + im.s + "-" + im.w[im.w.length - 1] + ".jpg"; };
 
     /* ---------- lightbox (drives from a passed-in list) ---------- */
     var lb = document.querySelector(".lightbox");
@@ -135,7 +151,9 @@
       // the new one loads — the browser renders the new src natively, right away.
       var fresh = document.createElement("img");
       fresh.alt = it.alt || "";
-      fresh.src = it.full;
+      fresh.onerror = function () { fresh.onerror = null; fresh.src = lbFallback(it.dir, it.im); };
+      // resolved per view, so resizing the window between opens picks afresh
+      fresh.src = lbUrl(it.dir, it.im);
       lbImg.replaceWith(fresh);
       lbImg = fresh;
       if (lbCap) lbCap.textContent = it.alt || "";
@@ -192,7 +210,7 @@
       });
 
       pGrid.innerHTML = "";
-      var lightList = (p.photos || []).map(function (im) { return { full: fullUrl(p.dir, im), alt: im.alt }; });
+      var lightList = (p.photos || []).map(function (im) { return { dir: p.dir, im: im, alt: im.alt }; });
       (p.photos || []).forEach(function (im, idx) {
         var b = document.createElement("button");
         b.type = "button"; b.setAttribute("aria-label", "Enlarge photo: " + im.alt);
