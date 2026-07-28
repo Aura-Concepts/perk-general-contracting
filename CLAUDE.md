@@ -121,6 +121,11 @@ Don't change/regenerate these endpoints without reason.
   Denver, CO + Salt Lake City, UT**.
 - Sister company: **Willow Crest Homes** (`https://willowcresthomesdsm.com/`).
 - Canonical domain in metadata/sitemap: `https://www.perkgc.com`.
+- Built by **Aura Concepts** (`https://auraconcepts.co`). Every page's
+  `.footer-bottom` carries a `.site-credit` line linking to
+  `https://auraconcepts.co/#perk-general-contracting` — that hash scrolls the
+  Aura work grid to this project's card and pulses it (handled by Aura's
+  `js/main.js`). Hand-maintained in all six pages; the build doesn't touch it.
 
 ## Gotchas when previewing in-browser
 **Why screenshots keep coming back blank/white.** The Browser pane runs
@@ -166,4 +171,4 @@ bug. Check it any time output looks wrong: `javascript_tool` →
    before judging a screenshot of anything below the fold.
 8. The browser **caches `main.js`/`styles.css`** — bump the `?v=N` on the
    `<link>`/`<script>` in all six HTML files after editing them (they're
-   currently `styles.css?v=4`, `main.js?v=3`), or you'll test stale code.
+   currently `styles.css?v=5`, `main.js?v=5`), or you'll test stale code.
