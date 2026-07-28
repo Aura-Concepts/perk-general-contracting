@@ -568,9 +568,8 @@ body.pmodal-open { overflow: hidden; }
 .footer-contact a:hover { color: #fff; }
 .footer-bottom { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: center; padding-block: 1.6rem; font-size: .82rem; }
 .footer-bottom .legal { color: var(--on-dark-soft); }
-.footer-bottom .site-credit { flex-basis: 100%; color: var(--on-dark-soft); border-top: 1px solid rgba(255,255,255,.08); padding-top: 1.1rem; }
-.footer-bottom .site-credit a { color: var(--on-dark); font-weight: 500; border-bottom: 1px solid rgba(255,255,255,.28); transition: color .2s var(--ease), border-color .2s var(--ease); }
-.footer-bottom .site-credit a:hover { color: #fff; border-color: #fff; }
+.footer-bottom .site-credit { color: var(--on-dark); font-weight: 500; white-space: nowrap; border-bottom: 1px solid rgba(255,255,255,.28); transition: color .2s var(--ease), border-color .2s var(--ease); }
+.footer-bottom .site-credit:hover { color: #fff; border-color: #fff; }
 @media (max-width: 780px) { .footer-top { grid-template-columns: 1fr 1fr; gap: 2.2rem 1.5rem; } .footer-brand { grid-column: 1 / -1; } }
 @media (max-width: 460px) { .footer-top { grid-template-columns: 1fr; } }
 

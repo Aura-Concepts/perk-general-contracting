@@ -122,10 +122,15 @@ Don't change/regenerate these endpoints without reason.
 - Sister company: **Willow Crest Homes** (`https://willowcresthomesdsm.com/`).
 - Canonical domain in metadata/sitemap: `https://www.perkgc.com`.
 - Built by **Aura Concepts** (`https://auraconcepts.co`). Every page's
-  `.footer-bottom` carries a `.site-credit` line linking to
-  `https://auraconcepts.co/#perk-general-contracting` — that hash scrolls the
-  Aura work grid to this project's card and pulses it (handled by Aura's
-  `js/main.js`). Hand-maintained in all six pages; the build doesn't touch it.
+  `.footer-bottom` legal line ends with `· Site by` + an `a.site-credit`
+  pointing at `https://auraconcepts.co/#perk-general-contracting` — that hash
+  scrolls the Aura work grid to this project's card and pulses it (handled by
+  Aura's `js/main.js`). Hand-maintained in all six pages; the build doesn't
+  touch it. **The bottom bar has almost no slack:** `.container` caps at 1200px
+  minus 40px gutters, so the two items get 1120px, and the current copy needs
+  ~1002px. "All rights reserved." was dropped from the copyright to buy that
+  room — adding words back here wraps the bar to two rows on every screen size,
+  since the limit is the container, not the viewport.
 
 ## Gotchas when previewing in-browser
 **Why screenshots keep coming back blank/white.** The Browser pane runs
