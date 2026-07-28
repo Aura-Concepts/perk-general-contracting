@@ -116,7 +116,8 @@ Don't change/regenerate these endpoints without reason.
 ## Business facts to preserve (verbatim)
 - **Perk General Contracting**, owner **Nikolaus Perkovich**, **est. 2014**, Des Moines, IA.
 - Phone **515-599-6934** (`tel:+15155996934`), email **info@perkgc.com**.
-- Service area: **all of Iowa + Omaha, NE + Kansas City, MO**.
+- Service area: **all of Iowa + Omaha, NE + Kansas City, MO + Minneapolis, MN +
+  Denver, CO + Salt Lake City, UT**.
 - Sister company: **Willow Crest Homes** (`https://willowcresthomesdsm.com/`).
 - Canonical domain in metadata/sitemap: `https://www.perkgc.com`.
 
