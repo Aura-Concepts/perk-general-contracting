@@ -87,8 +87,9 @@ Don't change/regenerate these endpoints without reason.
   `content/`, `*.md`, `.claude/`, tooling) out of the live site. Cloudflare Git
   integration runs `npx wrangler deploy` on push; non-prod branch builds are
   enabled (feature branches get preview URLs).
-- Commit style: subject + body, `Co-Authored-By: Claude Opus 4.8`. Branch,
-  don't push to main directly — open PRs.
+- Commit style: subject + body, plus a `Co-Authored-By:` trailer naming
+  **whichever model is actually writing the commit** (don't copy a version from
+  this file — it goes stale). Branch, don't push to main directly — open PRs.
 - Check current branch/status with `git status` / `git branch -a` rather than
   assuming — don't hardcode branch state here, it goes stale.
 
