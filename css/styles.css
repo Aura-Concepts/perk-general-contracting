@@ -559,6 +559,8 @@ body.pmodal-open { overflow: hidden; }
 .footer-top { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr; gap: 2rem; padding-bottom: 3rem; border-bottom: 1px solid var(--line-dark); }
 .footer-brand img { height: 66px; width: auto; margin-bottom: 1.1rem; }
 .footer-brand p { font-size: .93rem; max-width: 32ch; }
+.footer-brand .footer-area { margin-top: 1.4rem; font-size: .88rem; max-width: 34ch; }
+.footer-brand .footer-area span { display: block; margin-bottom: .45rem; font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: #fff; }
 .footer-col h4 { font-family: var(--font-body); font-size: .8rem; text-transform: uppercase; letter-spacing: .12em; color: #fff; margin-bottom: 1.1rem; font-weight: 600; }
 .footer-col ul { display: grid; gap: .65rem; }
 .footer-col a { font-size: .94rem; transition: color .25s; }

@@ -126,11 +126,16 @@ Don't change/regenerate these endpoints without reason.
   pointing at `https://auraconcepts.co/#perk-general-contracting` — that hash
   scrolls the Aura work grid to this project's card and pulses it (handled by
   Aura's `js/main.js`). Hand-maintained in all six pages; the build doesn't
-  touch it. **The bottom bar has almost no slack:** `.container` caps at 1200px
-  minus 40px gutters, so the two items get 1120px, and the current copy needs
-  ~1002px. "All rights reserved." was dropped from the copyright to buy that
-  room — adding words back here wraps the bar to two rows on every screen size,
-  since the limit is the container, not the viewport.
+  touch it.
+- **Footer layout note.** The service area used to share the bottom bar with the
+  copyright, which left the bar ~5px short of fitting on one line (it gets
+  1120px: `.container` caps at 1200px minus 40px gutters). It now lives in the
+  `.footer-brand` column as `p.footer-area` under a "Service area" label, so the
+  bottom bar holds only the copyright + credit (~482px, one line to a ~281px
+  viewport). City names use `&nbsp;` internally so lines break at the `·`
+  separators, never mid-name. If you ever move the towns back down, expect the
+  bar to wrap on every screen size — the ceiling is the container, not the
+  viewport.
 
 ## Gotchas when previewing in-browser
 **Why screenshots keep coming back blank/white.** The Browser pane runs
